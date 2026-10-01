@@ -5,8 +5,8 @@
         </a>
 
         <nav class="hidden items-center gap-9 text-sm font-medium text-muted md:flex" aria-label="Navigasi utama">
-            <a href="#beranda" class="border-b-2 border-primary py-7 text-primary">Beranda</a>
-            <a href="#gudang" class="transition hover:text-primary">Daftar Gudang</a>
+            <a href="{{ route('customer.home') }}" @class(['border-b-2 border-primary py-7 text-primary' => request()->routeIs('customer.home'), 'py-7 transition hover:text-primary' => ! request()->routeIs('customer.home')])>Beranda</a>
+            <a href="{{ route('customer.gudang.index') }}" @class(['border-b-2 border-primary py-7 text-primary' => request()->routeIs('customer.gudang.*'), 'py-7 transition hover:text-primary' => ! request()->routeIs('customer.gudang.*')])>Daftar Gudang</a>
             <a href="#cara-pemesanan" class="transition hover:text-primary">Cara Pemesanan</a>
         </nav>
 

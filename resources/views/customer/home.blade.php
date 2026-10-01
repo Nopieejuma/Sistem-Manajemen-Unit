@@ -12,11 +12,11 @@
         <x-customer.navbar />
 
         <main>
-            <section id="beranda" class="relative isolate overflow-hidden bg-[linear-gradient(118deg,#f7fbff_0%,#ffffff_56%,#edf6ff_100%)]">
+           <section id="beranda" class="relative isolate overflow-hidden" style="background-color: #bfdbfe;">
                 <div class="absolute -right-28 top-8 -z-10 h-96 w-96 rounded-full bg-primary/8 blur-3xl"></div>
                 <div class="mx-auto grid min-h-[600px] max-w-7xl items-center gap-12 px-5 py-18 sm:px-8 lg:grid-cols-[1.04fr_.96fr] lg:px-10 lg:py-24">
                     <div>
-                        <p class="inline-flex rounded-full border border-primary/15 bg-primary/8 px-3.5 py-2 text-xs font-bold tracking-[0.12em] text-primary">KAWASAN INDUSTRI TERPADU</p>
+                        <p class="inline-flex rounded-full border border-primary/15 bg-primary/8 px-3.5 py-2 text-xs font-bold tracking-[0.12em]" style="color: #000000;"> KAWASAN INDUSTRI TERPADU</p>
                         <h1 class="mt-6 max-w-2xl text-4xl font-bold leading-[1.12] tracking-[-0.045em] text-ink sm:text-5xl lg:text-6xl">Temukan Gudang yang <span class="text-primary">Tepat</span> untuk Bisnis Anda</h1>
                         <p class="mt-6 max-w-xl text-base leading-7 text-muted sm:text-lg">Lihat informasi gudang, pilih gudang yang Anda minati, dan jadwalkan kunjungan langsung dengan admin.</p>
                         <form class="mt-9 flex max-w-2xl flex-col gap-3 rounded-2xl border border-line bg-white p-3 shadow-[0_16px_40px_rgba(25,103,210,0.10)] sm:flex-row" action="#gudang" method="get">

@@ -8,7 +8,7 @@
             <p class="text-sm font-bold">Navigasi</p>
             <div class="mt-4 flex flex-col gap-3 text-sm text-slate-300">
                 <a href="#beranda" class="hover:text-white">Beranda</a>
-                <a href="#gudang" class="hover:text-white">Daftar Gudang</a>
+                <a href="{{ route('customer.gudang.index') }}" class="hover:text-white">Daftar Gudang</a>
                 <a href="#cara-pemesanan" class="hover:text-white">Cara Pemesanan</a>
             </div>
         </div>
