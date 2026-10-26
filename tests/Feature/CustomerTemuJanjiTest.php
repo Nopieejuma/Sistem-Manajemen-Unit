@@ -15,6 +15,10 @@ class CustomerTemuJanjiTest extends TestCase
     {
         parent::setUp();
 
+        $this->assertSame('sqlite', DB::connection()->getDriverName());
+        $this->assertSame(':memory:', DB::connection()->getDatabaseName());
+        $this->travelTo(new \DateTimeImmutable('2026-11-01 08:00:00', new \DateTimeZone('Asia/Jakarta')));
+
         Schema::create('gudang', function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->string('unit_code');
@@ -185,7 +189,7 @@ class CustomerTemuJanjiTest extends TestCase
         @$document->loadHTML((string) $view);
         $xpath = new \DOMXPath($document);
 
-        $this->assertSame(2, $xpath->query('//input[@type="radio" and @name="jadwal_id"]')->length);
+        $this->assertSame(2, $xpath->query('//div[@id="appointment-slots"]//input[@type="radio" and @name="jadwal_id"]')->length);
         $this->assertSame(1, $xpath->query('//input[@value="full" and @disabled]')->length);
         $this->assertSame(1, $xpath->query('//input[@value="available" and not(@disabled)]')->length);
     }
@@ -233,6 +237,7 @@ class CustomerTemuJanjiTest extends TestCase
         ]);
         $this->assertDatabaseHas('gudang', ['id' => $warehouse->id, 'status' => 'tersedia']);
 
+        DB::table('jadwal')->where('id', $payload['jadwal_id'])->update(['kuota' => 2]);
         $second = $this->postJson($url, $payload)->assertCreated();
         $this->assertNotSame($code, $second->json('kode_booking'));
         $this->assertDatabaseCount('temu_janji', 2);
@@ -321,6 +326,134 @@ class CustomerTemuJanjiTest extends TestCase
             ->assertJsonMissingPath('kode_booking');
         $this->assertDatabaseCount('temu_janji', 0);
         $this->assertDatabaseHas('gudang', ['id' => $warehouse->id, 'status' => 'tersedia']);
+    }
+
+    public function test_empty_slot_is_available_and_pending_booking_fills_it_for_all_warehouses(): void
+    {
+        $warehouse = $this->warehouse();
+        $otherWarehouse = $this->warehouse(['id' => '00000000-0000-0000-0000-000000000002', 'unit_code' => 'C18']);
+        $payload = $this->payload($warehouse);
+        $availability = route('customer.temu-janji.availability', ['tanggal_kunjungan' => $payload['tanggal_kunjungan']]);
+        $this->getJson($availability)->assertOk()->assertJsonPath('slots.0.is_full', false);
+
+        $this->postJson(route('customer.temu-janji.store', ['group' => $warehouse->groupIdentifier()]), $payload)->assertCreated();
+
+        $this->getJson($availability)->assertJsonPath('slots.0.is_full', true);
+        $payload['gudang_id'] = $otherWarehouse->id;
+        $this->postJson(route('customer.temu-janji.store', ['group' => $otherWarehouse->groupIdentifier()]), $payload)
+            ->assertUnprocessable()->assertJsonValidationErrors('jadwal_id')
+            ->assertJsonPath('errors.jadwal_id.0', 'Slot waktu yang Anda pilih sudah penuh. Silakan pilih waktu kunjungan lainnya.');
+        $this->assertDatabaseCount('temu_janji', 1);
+        $this->assertDatabaseHas('gudang', ['id' => $warehouse->id, 'status' => 'tersedia']);
+        $this->assertDatabaseHas('gudang', ['id' => $otherWarehouse->id, 'status' => 'tersedia']);
+    }
+
+    #[TestWith(['pending', true])]
+    #[TestWith(['approved', true])]
+    #[TestWith(['completed', true])]
+    #[TestWith(['rejected', false])]
+    #[TestWith(['canceled', false])]
+    public function test_capacity_uses_only_the_agreed_statuses(string $status, bool $isFull): void
+    {
+        $warehouse = $this->warehouse();
+        $payload = $this->payload($warehouse);
+        $url = route('customer.temu-janji.store', ['group' => $warehouse->groupIdentifier()]);
+        $this->postJson($url, $payload)->assertCreated();
+        DB::table('temu_janji')->update(['status' => $status]);
+
+        $this->getJson(route('customer.temu-janji.availability', ['tanggal_kunjungan' => $payload['tanggal_kunjungan']]))
+            ->assertJsonPath('slots.0.is_full', $isFull);
+        $response = $this->postJson($url, $payload);
+        if ($isFull) {
+            $response->assertUnprocessable()->assertJsonValidationErrors('jadwal_id');
+        } else {
+            $response->assertCreated()->assertJsonPath('status', 'pending');
+        }
+    }
+
+    #[TestWith(['rejected'])]
+    #[TestWith(['canceled'])]
+    public function test_slot_becomes_available_after_status_releases_capacity(string $status): void
+    {
+        $warehouse = $this->warehouse();
+        $payload = $this->payload($warehouse);
+        $this->postJson(route('customer.temu-janji.store', ['group' => $warehouse->groupIdentifier()]), $payload)->assertCreated();
+        $url = route('customer.temu-janji.availability', ['tanggal_kunjungan' => $payload['tanggal_kunjungan']]);
+        $this->getJson($url)->assertJsonPath('slots.0.is_full', true);
+        DB::table('temu_janji')->update(['status' => $status]);
+
+        $this->getJson($url)->assertJsonPath('slots.0.is_full', false)->assertJsonCount(1, 'slots');
+    }
+
+    public function test_dates_and_time_pairs_have_independent_capacity(): void
+    {
+        $warehouse = $this->warehouse();
+        $payload = $this->payload($warehouse);
+        $secondSlot = $this->schedule(['id' => '00000000-0000-0000-0000-000000000012', 'jam_mulai' => '10:00:00', 'jam_selesai' => '10:45:00']);
+        $url = route('customer.temu-janji.store', ['group' => $warehouse->groupIdentifier()]);
+        $this->postJson($url, $payload)->assertCreated();
+        $this->getJson(route('customer.temu-janji.availability', ['tanggal_kunjungan' => $payload['tanggal_kunjungan']]))
+            ->assertJsonPath('slots.0.is_full', true)->assertJsonPath('slots.1.is_full', false);
+        $differentTime = array_replace($payload, ['jadwal_id' => $secondSlot]);
+        $this->postJson($url, $differentTime)->assertCreated();
+        $differentDate = array_replace($payload, ['tanggal_kunjungan' => today()->addDays(2)->toDateString()]);
+
+        $this->getJson(route('customer.temu-janji.availability', ['tanggal_kunjungan' => $differentDate['tanggal_kunjungan']]))
+            ->assertJsonPath('slots.0.is_full', false)->assertJsonPath('slots.1.is_full', false);
+        $this->postJson($url, $differentDate)->assertCreated();
+    }
+
+    public function test_capacity_comes_from_schedule_and_is_not_hardcoded_to_one(): void
+    {
+        $warehouse = $this->warehouse();
+        $payload = $this->payload($warehouse);
+        DB::table('jadwal')->update(['kuota' => 2]);
+        $url = route('customer.temu-janji.store', ['group' => $warehouse->groupIdentifier()]);
+        $this->postJson($url, $payload)->assertCreated();
+        $availability = route('customer.temu-janji.availability', ['tanggal_kunjungan' => $payload['tanggal_kunjungan']]);
+        $this->getJson($availability)->assertJsonPath('slots.0.is_full', false);
+        $this->postJson($url, $payload)->assertCreated();
+
+        $this->getJson($availability)->assertJsonPath('slots.0.is_full', true);
+        $this->postJson($url, $payload)->assertUnprocessable();
+        $this->assertDatabaseCount('temu_janji', 2);
+    }
+
+    public function test_past_or_started_slots_today_cannot_be_selected_or_submitted(): void
+    {
+        $this->travelTo(new \DateTimeImmutable('2026-11-01 09:00:00', new \DateTimeZone('Asia/Jakarta')));
+        $warehouse = $this->warehouse();
+        $payload = $this->payload($warehouse);
+        $payload['tanggal_kunjungan'] = '2026-11-01';
+        $this->getJson(route('customer.temu-janji.availability', ['tanggal_kunjungan' => '2026-11-01']))
+            ->assertJsonPath('slots.0.is_past', true)->assertJsonPath('slots.0.is_full', false);
+
+        $this->postJson(route('customer.temu-janji.store', ['group' => $warehouse->groupIdentifier()]), $payload)
+            ->assertUnprocessable()->assertJsonValidationErrors('jadwal_id');
+        $this->assertDatabaseCount('temu_janji', 0);
+    }
+
+    public function test_jakarta_calendar_date_is_used_when_utc_is_still_yesterday(): void
+    {
+        $this->travelTo(new \DateTimeImmutable('2026-11-01 23:30:00', new \DateTimeZone('UTC')));
+        $warehouse = $this->warehouse();
+        $payload = $this->payload($warehouse);
+        $payload['tanggal_kunjungan'] = '2026-11-01';
+        $this->getJson(route('customer.temu-janji.availability', ['tanggal_kunjungan' => '2026-11-01']))->assertUnprocessable();
+        $this->postJson(route('customer.temu-janji.store', ['group' => $warehouse->groupIdentifier()]), $payload)
+            ->assertUnprocessable()->assertJsonValidationErrors('tanggal_kunjungan');
+        $this->getJson(route('customer.temu-janji.availability', ['tanggal_kunjungan' => '2026-11-02']))
+            ->assertOk()->assertJsonPath('slots.0.is_past', false);
+    }
+
+    public function test_availability_requires_valid_date_and_omits_inactive_slots_and_customer_data(): void
+    {
+        $this->schedule(['status_aktif' => false]);
+        $this->getJson(route('customer.temu-janji.availability'))->assertUnprocessable();
+        $this->getJson(route('customer.temu-janji.availability', ['tanggal_kunjungan' => 'not-a-date']))->assertUnprocessable();
+        $this->getJson(route('customer.temu-janji.availability', ['tanggal_kunjungan' => '2026-10-31']))->assertUnprocessable();
+        $this->getJson(route('customer.temu-janji.availability', ['tanggal_kunjungan' => '2026-11-02']))
+            ->assertOk()->assertExactJson(['slots' => []]);
     }
 
     /** @param array<string, string|bool> $attributes */

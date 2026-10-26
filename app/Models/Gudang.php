@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 #[Table(name: 'gudang', key: 'id', keyType: 'string', incrementing: false, timestamps: false)]
 class Gudang extends Model
@@ -33,6 +34,16 @@ class Gudang extends Model
             'grand_total' => 'decimal:2',
             'total_luas_bangunan' => 'decimal:2',
         ];
+    }
+
+    public function statusLabel(): string
+    {
+        return match ($this->status) {
+            'tersedia' => 'Tersedia',
+            'sedang di-keep' => 'Sedang Di-keep',
+            'tidak tersedia', 'digunakan' => 'Tidak Tersedia',
+            default => $this->status ? Str::headline($this->status) : 'Status belum tersedia',
+        };
     }
 
     public function firstPhotoUrl(): ?string
@@ -102,6 +113,20 @@ class Gudang extends Model
             return null;
         }
 
+        foreach ($attributes as $attribute => $value) {
+            if ($value === null) {
+                continue;
+            }
+
+            if (in_array($attribute, ['blok', 'tipe_gudang'], true)) {
+                if (! is_string($value)) {
+                    return null;
+                }
+            } elseif ((! is_string($value) && ! is_int($value) && ! is_float($value)) || ! is_numeric($value) || ! is_finite((float) $value)) {
+                return null;
+            }
+        }
+
         return $attributes;
     }
 
@@ -113,6 +138,8 @@ class Gudang extends Model
         foreach ($attributes as $attribute => $value) {
             if ($value === null) {
                 $query->whereNull($attribute);
+            } elseif ($attribute === 'tipe_gudang') {
+                $query->whereRaw('CAST(tipe_gudang AS TEXT) = ?', [$value]);
             } else {
                 $query->where($attribute, $value);
             }

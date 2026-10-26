@@ -47,7 +47,7 @@
                         <div class="flex items-start justify-between gap-4">
                             <h1 class="text-3xl font-bold tracking-[-0.035em] text-ink sm:text-4xl">Gudang {{ $selectedUnit->unit_code }}</h1>
                             @if ($selectedUnit->status)
-                                <span class="shrink-0 rounded-full bg-[#e8f7ee] px-3 py-1.5 text-[11px] font-bold tracking-wide text-[#167548]">{{ strtoupper($selectedUnit->status) }}</span>
+                                <span @class(['shrink-0 rounded-full px-3 py-1.5 text-[11px] font-bold tracking-wide', 'bg-[#e8f7ee] text-[#167548]' => $selectedUnit->status === 'tersedia', 'bg-amber-50 text-amber-700' => $selectedUnit->status === 'sedang di-keep', 'bg-slate-100 text-slate-600' => ! in_array($selectedUnit->status, ['tersedia', 'sedang di-keep'], true)])>{{ $selectedUnit->statusLabel() }}</span>
                             @endif
                         </div>
 

@@ -12,28 +12,21 @@
         <x-customer.navbar />
 
         <main>
-           <section id="beranda" class="relative isolate overflow-hidden" style="background-color: #bfdbfe;">
+            <section id="beranda" class="relative isolate overflow-hidden" style="background-color: #bfdbfe;">
                 <div class="absolute -right-28 top-8 -z-10 h-96 w-96 rounded-full bg-primary/8 blur-3xl"></div>
                 <div class="mx-auto grid min-h-[600px] max-w-7xl items-center gap-12 px-5 py-18 sm:px-8 lg:grid-cols-[1.04fr_.96fr] lg:px-10 lg:py-24">
                     <div>
                         <p class="inline-flex rounded-full border border-primary/15 bg-primary/8 px-3.5 py-2 text-xs font-bold tracking-[0.12em]" style="color: #000000;"> KAWASAN INDUSTRI TERPADU</p>
                         <h1 class="mt-6 max-w-2xl text-4xl font-bold leading-[1.12] tracking-[-0.045em] text-ink sm:text-5xl lg:text-6xl">Temukan Gudang yang <span class="text-primary">Tepat</span> untuk Bisnis Anda</h1>
                         <p class="mt-6 max-w-xl text-base leading-7 text-muted sm:text-lg">Lihat informasi gudang, pilih gudang yang Anda minati, dan jadwalkan kunjungan langsung dengan admin.</p>
-                        <form class="mt-9 flex max-w-2xl flex-col gap-3 rounded-2xl border border-line bg-white p-3 shadow-[0_16px_40px_rgba(25,103,210,0.10)] sm:flex-row" action="#gudang" method="get">
-                            <label for="warehouse-search" class="sr-only">Cari nama gudang atau blok</label>
-                            <div class="flex flex-1 items-center gap-3 px-3">
-                                <svg class="size-5 text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="6"></circle><path d="m20 20-4.2-4.2"></path></svg>
-                                <input id="warehouse-search" name="q" type="search" placeholder="Cari nama gudang atau blok..." class="w-full bg-transparent py-3 text-sm text-ink outline-none placeholder:text-muted">
-                            </div>
-                            <button type="submit" class="rounded-xl bg-primary px-6 py-3.5 text-sm font-bold text-white transition hover:bg-primary-dark">Cari Gudang</button>
-                        </form>
+                        <a href="{{ route('customer.gudang.index') }}" class="mt-9 inline-flex rounded-xl bg-primary px-6 py-3.5 text-sm font-bold text-white transition hover:bg-primary-dark">Lihat Daftar Gudang</a>
                     </div>
                     <div class="relative mx-auto w-full max-w-xl">
                         <div class="absolute -inset-4 rounded-[2rem] bg-primary/10 blur-2xl"></div>
                         <img src="{{ asset('images/warehouses/warehouse-a5.png') }}" alt="Bangunan gudang modern di kawasan industri" class="relative h-[340px] w-full rounded-[1.75rem] object-cover shadow-2xl sm:h-[410px]">
                         <div class="absolute -bottom-5 -left-3 rounded-xl border border-white/70 bg-white/95 px-5 py-4 shadow-lg backdrop-blur sm:left-6">
-                            <p class="text-2xl font-bold tracking-tight text-ink">113<span class="text-primary">+</span></p>
-                            <p class="mt-1 text-xs font-medium text-muted">Pilihan gudang terdaftar</p>
+                            <p class="text-2xl font-bold tracking-tight text-ink">{{ number_format($totalUnits, 0, ',', '.') }}</p>
+                            <p class="mt-1 text-xs font-medium text-muted">Unit gudang terdaftar</p>
                         </div>
                     </div>
                 </div>
@@ -41,8 +34,8 @@
 
             <section class="bg-primary text-white">
                 <div class="mx-auto grid max-w-7xl divide-y divide-white/20 px-5 sm:grid-cols-3 sm:divide-x sm:divide-y-0 sm:px-8 lg:px-10">
-                    <div class="py-8 sm:py-10"><p class="text-4xl font-bold tracking-tight">113</p><p class="mt-2 text-sm text-white/75">Total Gudang</p></div>
-                    <div class="py-8 sm:px-10 sm:py-10"><p class="text-4xl font-bold tracking-tight">85</p><p class="mt-2 text-sm text-white/75">Gudang Tersedia</p></div>
+                    <div class="py-8 sm:py-10"><p class="text-4xl font-bold tracking-tight">{{ number_format($totalUnits, 0, ',', '.') }}</p><p class="mt-2 text-sm text-white/75">Total Unit Gudang</p></div>
+                    <div class="py-8 sm:px-10 sm:py-10"><p class="text-4xl font-bold tracking-tight">{{ number_format($availableUnits, 0, ',', '.') }}</p><p class="mt-2 text-sm text-white/75">Unit Gudang Tersedia</p></div>
                     <div class="py-8 sm:px-10 sm:py-10"><p class="text-4xl font-bold tracking-tight">± 200 Ha</p><p class="mt-2 text-sm text-white/75">Area Kawasan</p></div>
                 </div>
             </section>
@@ -50,15 +43,17 @@
             <section id="gudang" class="bg-surface py-20 sm:py-24">
                 <div class="mx-auto max-w-7xl px-5 sm:px-8 lg:px-10">
                     <div class="flex items-end justify-between gap-6">
-                        <div><p class="text-sm font-bold tracking-[0.13em] text-primary">PILIHAN TERBAIK</p><h2 class="mt-3 text-3xl font-bold tracking-[-0.035em] text-ink sm:text-4xl">Gudang Tersedia</h2><p class="mt-3 text-muted">Pilih gudang yang sesuai dengan kebutuhan bisnis Anda.</p></div>
-                        <a href="#" class="hidden shrink-0 text-sm font-bold text-primary hover:text-primary-dark sm:block">Lihat Semua <span aria-hidden="true">→</span></a>
+                        <div><p class="text-sm font-bold tracking-[0.13em] text-primary">PILIHAN TERBAIK</p><h2 class="mt-3 text-3xl font-bold tracking-[-0.035em] text-ink sm:text-4xl">Gudang Tersedia</h2><p class="mt-3 text-muted">Pilihan kelompok gudang dengan unit tersedia untuk kebutuhan bisnis Anda.</p></div>
+                        <a href="{{ route('customer.gudang.index') }}" class="hidden shrink-0 text-sm font-bold text-primary hover:text-primary-dark sm:block">Lihat Semua <span aria-hidden="true">→</span></a>
                     </div>
-                    <div class="mt-10 grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
-                        @foreach ($warehouses as $warehouse)
+                    <div class="mt-10 grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+                        @forelse ($warehouses as $warehouse)
                             <x-customer.warehouse-card :warehouse="$warehouse" />
-                        @endforeach
+                        @empty
+                            <p class="text-sm text-muted">Belum ada unit gudang tersedia.</p>
+                        @endforelse
                     </div>
-                    <a href="#" class="mt-8 inline-flex text-sm font-bold text-primary hover:text-primary-dark sm:hidden">Lihat Semua <span class="ml-1" aria-hidden="true">→</span></a>
+                    <a href="{{ route('customer.gudang.index') }}" class="mt-8 inline-flex text-sm font-bold text-primary hover:text-primary-dark sm:hidden">Lihat Semua <span class="ml-1" aria-hidden="true">→</span></a>
                 </div>
             </section>
 

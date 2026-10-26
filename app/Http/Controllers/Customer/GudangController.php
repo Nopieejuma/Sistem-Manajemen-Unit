@@ -13,8 +13,18 @@ class GudangController extends Controller
 {
     public function index(Request $request): View
     {
+        $request->validate([
+            'search' => ['nullable', 'string', 'max:150'],
+            'blok' => ['nullable', 'string', 'max:10'],
+            'tipe_gudang' => ['nullable', 'string', 'max:100'],
+            'status' => ['nullable', 'string', 'max:50'],
+        ]);
+
         $search = trim($request->string('search')->toString());
-        $searchPattern = '%'.mb_strtolower($search).'%';
+        $normalizedSearch = preg_replace('/\s+/u', ' ', $search);
+        $searchByBlock = preg_match('/^(?:gudang\s+)?blok\s+/iu', $normalizedSearch) === 1;
+        $normalizedSearch = preg_replace('/^(?:gudang\s+(?:blok\s+)?|blok\s+)/iu', '', $normalizedSearch);
+        $searchPattern = '%'.mb_strtolower($normalizedSearch).'%';
         $blok = $request->string('blok')->toString();
         $tipeGudang = $request->string('tipe_gudang')->toString();
         $status = $request->string('status')->toString();
@@ -33,8 +43,14 @@ class GudangController extends Controller
                 'foto',
                 'fasilitas',
             ])
-            ->when($search !== '', function (Builder $query) use ($searchPattern): void {
-                $query->where(function (Builder $query) use ($searchPattern): void {
+            ->when($search !== '', function (Builder $query) use ($searchPattern, $searchByBlock): void {
+                $query->where(function (Builder $query) use ($searchPattern, $searchByBlock): void {
+                    if ($searchByBlock) {
+                        $query->whereRaw('LOWER(blok) LIKE ?', [$searchPattern]);
+
+                        return;
+                    }
+
                     $query
                         ->whereRaw('LOWER(unit_code) LIKE ?', [$searchPattern])
                         ->orWhereRaw('LOWER(blok) LIKE ?', [$searchPattern])
@@ -42,8 +58,9 @@ class GudangController extends Controller
                 });
             })
             ->when($blok !== '', fn (Builder $query): Builder => $query->where('blok', $blok))
-            ->when($tipeGudang !== '', fn (Builder $query): Builder => $query->where('tipe_gudang', $tipeGudang))
-            ->when($status !== '', fn (Builder $query): Builder => $query->where('status', $status))
+            ->when($tipeGudang !== '', fn (Builder $query): Builder => $query->whereRaw('CAST(tipe_gudang AS TEXT) = ?', [$tipeGudang]))
+            ->when($status !== '', fn (Builder $query): Builder => $query->whereIn('status',
+                $status === 'tidak tersedia' ? ['tidak tersedia', 'digunakan'] : [$status]))
             ->orderBy('unit_code')
             ->get();
 
@@ -51,7 +68,8 @@ class GudangController extends Controller
             ->groupBy(fn (Gudang $warehouse): string => $warehouse->groupKey())
             ->map(function (Collection $units): array {
                 $units = $units->sortBy('unit_code')->values();
-                $statuses = $units->pluck('status')->filter()->unique()->values();
+                $statusCounts = $units->groupBy(fn (Gudang $unit): string => $unit->statusLabel())
+                    ->map(fn (Collection $statusUnits): int => $statusUnits->count());
                 $facilitySets = $units
                     ->map(fn (Gudang $warehouse): string => json_encode($warehouse->fasilitas ?? []))
                     ->unique();
@@ -60,9 +78,7 @@ class GudangController extends Controller
                     'warehouse' => $units->first(),
                     'unitCount' => $units->count(),
                     'availableUnitCount' => $units->where('status', 'tersedia')->count(),
-                    'status' => $statuses->count() === 1
-                        ? $statuses->first()
-                        : ($units->where('status', 'tersedia')->isNotEmpty() ? 'tersedia' : $statuses->first()),
+                    'statusCounts' => $statusCounts,
                     'facilities' => $facilitySets->count() === 1
                         ? collect($units->first()->fasilitas ?? [])
                         : collect(),
@@ -85,6 +101,8 @@ class GudangController extends Controller
 
     public function show(Request $request, string $group): View
     {
+        $request->validate(['unit' => ['nullable', 'uuid']]);
+
         $groupingAttributes = Gudang::groupingAttributesFromIdentifier($group);
 
         abort_unless($groupingAttributes, 404);

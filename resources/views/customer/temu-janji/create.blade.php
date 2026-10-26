@@ -80,17 +80,17 @@
                         <div class="flex flex-col gap-6 p-6">
                             <div>
                                 <label for="visit-date" class="mb-2 block text-sm font-semibold text-gray-700">Tanggal Kunjungan <span class="text-red-500">*</span></label>
-                                <input id="visit-date" name="tanggal_kunjungan" type="date" min="{{ $today }}" required class="h-11 w-full min-w-0 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-700 outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100">
+                                <input id="visit-date" name="tanggal_kunjungan" type="date" min="{{ $today }}" value="{{ $today }}" required class="h-11 w-full min-w-0 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-700 outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100">
                             </div>
                             <fieldset>
                                 <legend class="mb-3 text-sm font-semibold text-gray-700">Pilih Slot Waktu <span class="text-red-500">*</span></legend>
-                                <div class="grid grid-cols-1 gap-3 min-[400px]:grid-cols-2 sm:grid-cols-3">
+                                <div id="appointment-slots" class="grid grid-cols-1 gap-3 min-[400px]:grid-cols-2 sm:grid-cols-3">
                                     @forelse ($timeSlots as $timeSlot)
                                         <label class="relative">
-                                            <input type="radio" name="jadwal_id" value="{{ $timeSlot['id'] }}" required @disabled($timeSlot['is_full']) class="peer sr-only">
+                                            <input data-unavailable-label="{{ $timeSlot['is_full'] ? 'Penuh' : 'Sudah lewat' }}" type="radio" name="jadwal_id" value="{{ $timeSlot['id'] }}" required @disabled($timeSlot['is_full'] || ($timeSlot['is_past'] ?? false)) class="peer sr-only">
                                             <span class="flex cursor-pointer flex-col gap-1 rounded-xl border border-gray-200 bg-white px-3 py-4 text-center text-sm text-gray-700 transition peer-checked:border-blue-700 peer-checked:bg-blue-700 peer-checked:text-white peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-blue-600 peer-disabled:cursor-not-allowed peer-disabled:border-gray-100 peer-disabled:bg-gray-100 peer-disabled:text-gray-400">
                                                 <span class="font-semibold">{{ $timeSlot['start'] }} – {{ $timeSlot['end'] }}</span>
-                                                <span data-slot-status class="text-xs">{{ $timeSlot['is_full'] ? 'Penuh' : 'Tersedia' }}</span>
+                                                <span data-slot-status class="text-xs">{{ $timeSlot['is_full'] ? 'Penuh' : (($timeSlot['is_past'] ?? false) ? 'Sudah lewat' : 'Tersedia') }}</span>
                                             </span>
                                         </label>
                                     @empty
@@ -102,6 +102,16 @@
                                     <span class="inline-flex items-center gap-2"><span aria-hidden="true" class="size-3 rounded-sm border border-gray-200 bg-gray-100"></span>Penuh</span>
                                     <span class="inline-flex items-center gap-2"><span aria-hidden="true" class="size-3 rounded-sm border border-gray-300 bg-white"></span>Tersedia</span>
                                 </div>
+                                <p id="slot-availability-message" role="status" class="mt-3 text-sm text-gray-500"></p>
+                                <template id="appointment-slot-template">
+                                    <label class="relative">
+                                        <input type="radio" name="jadwal_id" required class="peer sr-only">
+                                        <span class="flex cursor-pointer flex-col gap-1 rounded-xl border border-gray-200 bg-white px-3 py-4 text-center text-sm text-gray-700 transition peer-checked:border-blue-700 peer-checked:bg-blue-700 peer-checked:text-white peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-blue-600 peer-disabled:cursor-not-allowed peer-disabled:border-gray-100 peer-disabled:bg-gray-100 peer-disabled:text-gray-400">
+                                            <span class="font-semibold"></span>
+                                            <span data-slot-status class="text-xs"></span>
+                                        </span>
+                                    </label>
+                                </template>
                             </fieldset>
                         </div>
                     </section>
@@ -123,15 +133,15 @@
             </div>
         </main>
 
-            <dialog id="appointment-success" aria-labelledby="success-title" aria-describedby="success-description" class="fixed inset-0 m-auto w-[calc(100%-2.5rem)] max-w-lg rounded-2xl border border-gray-200 bg-white p-6 text-gray-900 shadow-xl backdrop:bg-slate-900/50 sm:p-8">
-                <span class="inline-flex rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">Menunggu Persetujuan</span>
-                <h2 id="success-title" class="mt-4 text-xl font-bold">Permohonan Temu Janji Berhasil Dikirim</h2>
-                <p id="success-description" class="mt-3 text-sm leading-6 text-gray-600">Permohonan temu janji Anda telah dikirim dan akan diperiksa terlebih dahulu oleh admin. Silakan menunggu konfirmasi dari admin.</p>
-                <p class="mt-3 text-sm font-semibold">Kode Booking: <span id="booking-code"></span></p>
-                <form method="dialog" class="mt-6 flex justify-end">
-                    <button autofocus class="rounded-xl bg-blue-700 px-6 py-3 text-sm font-semibold text-white hover:bg-blue-800">Mengerti</button>
-                </form>
-            </dialog>
+        <dialog id="appointment-success" aria-labelledby="success-title" aria-describedby="success-description" class="fixed inset-0 m-auto w-[calc(100%-2.5rem)] max-w-lg rounded-2xl border border-gray-200 bg-white p-6 text-gray-900 shadow-xl backdrop:bg-slate-900/50 sm:p-8">
+            <span class="inline-flex rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">Menunggu Persetujuan</span>
+            <h2 id="success-title" class="mt-4 text-xl font-bold">Permohonan Temu Janji Berhasil Dikirim</h2>
+            <p id="success-description" class="mt-3 text-sm leading-6 text-gray-600">Permohonan temu janji Anda telah dikirim dan akan diperiksa terlebih dahulu oleh admin. Silakan menunggu konfirmasi dari admin.</p>
+            <p class="mt-3 text-sm font-semibold">Kode Booking: <span id="booking-code"></span></p>
+            <form method="dialog" class="mt-6 flex justify-end">
+                <button autofocus class="rounded-xl bg-blue-700 px-6 py-3 text-sm font-semibold text-white hover:bg-blue-800">Mengerti</button>
+            </form>
+        </dialog>
 
         <script>
             const appointmentForm = document.getElementById('appointment-form');
@@ -140,24 +150,84 @@
             const errorMessage = document.getElementById('booking-error');
             let submitting = false;
             let submitted = false;
-            const requiredFields = [...appointmentForm.querySelectorAll('[required]')];
-            const timeSlots = [...appointmentForm.querySelectorAll('input[name="jadwal_id"]')];
+            const requiredFields = [...appointmentForm.querySelectorAll('[required]:not([name="jadwal_id"])')];
+            const visitDate = document.getElementById('visit-date');
+            const slotContainer = document.getElementById('appointment-slots');
+            const slotTemplate = document.getElementById('appointment-slot-template');
+            const availabilityMessage = document.getElementById('slot-availability-message');
+            const availabilityUrl = @json($availabilityUrl ?? route('customer.temu-janji.availability'));
+            let timeSlots = [...slotContainer.querySelectorAll('input[name="jadwal_id"]')];
+            let availabilityRequest = 0;
+            let availabilityLoading = false;
 
             function updateAppointmentForm() {
                 timeSlots.forEach((slot) => {
                     slot.closest('label').querySelector('[data-slot-status]').textContent =
-                        slot.disabled ? 'Penuh' : (slot.checked ? 'Dipilih' : 'Tersedia');
+                        slot.disabled ? slot.dataset.unavailableLabel : (slot.checked ? 'Dipilih' : 'Tersedia');
                 });
                 const validFields = requiredFields.every((field) =>
                     field.disabled || (field.validity.valid && field.value.trim() !== '')
                 );
-                confirmButton.disabled = submitting || submitted || !validFields ||
+                confirmButton.disabled = submitting || submitted || availabilityLoading || !validFields ||
                     !timeSlots.some((slot) => slot.checked && !slot.disabled);
             }
 
+            async function refreshAvailability() {
+                const requestId = ++availabilityRequest;
+                availabilityLoading = true;
+                timeSlots.forEach((slot) => {
+                    slot.checked = false;
+                    slot.disabled = true;
+                    slot.dataset.unavailableLabel = 'Memuat…';
+                });
+                availabilityMessage.textContent = 'Memuat ketersediaan slot…';
+                updateAppointmentForm();
+                if (!visitDate.value || !visitDate.validity.valid) {
+                    availabilityLoading = false;
+                    availabilityMessage.textContent = 'Pilih tanggal kunjungan yang valid.';
+                    updateAppointmentForm();
+                    return;
+                }
+                try {
+                    const url = new URL(availabilityUrl, window.location.origin);
+                    url.searchParams.set('tanggal_kunjungan', visitDate.value);
+                    const response = await fetch(url, { headers: { Accept: 'application/json' }, cache: 'no-store' });
+                    const result = await response.json();
+                    if (!response.ok || !Array.isArray(result.slots)) {
+                        throw new Error('Ketersediaan slot belum dapat dimuat. Pilih ulang tanggal untuk mencoba kembali.');
+                    }
+                    if (requestId !== availabilityRequest) {
+                        return;
+                    }
+                    slotContainer.replaceChildren();
+                    result.slots.forEach((slot) => {
+                        const fragment = slotTemplate.content.cloneNode(true);
+                        const input = fragment.querySelector('input');
+                        input.value = slot.id;
+                        input.disabled = slot.is_full || slot.is_past;
+                        input.dataset.unavailableLabel = slot.is_full ? 'Penuh' : 'Sudah lewat';
+                        fragment.querySelector('.font-semibold').textContent = `${slot.start} – ${slot.end}`;
+                        slotContainer.append(fragment);
+                    });
+                    timeSlots = [...slotContainer.querySelectorAll('input[name="jadwal_id"]')];
+                    availabilityMessage.textContent = timeSlots.length ? '' : 'Jadwal kunjungan belum tersedia.';
+                } catch (error) {
+                    if (requestId === availabilityRequest) {
+                        timeSlots.forEach((slot) => { slot.dataset.unavailableLabel = 'Belum tersedia'; });
+                        availabilityMessage.textContent = error.message || 'Ketersediaan slot belum dapat dimuat.';
+                    }
+                } finally {
+                    if (requestId === availabilityRequest) {
+                        availabilityLoading = false;
+                        updateAppointmentForm();
+                    }
+                }
+            }
+
+            visitDate.addEventListener('change', refreshAvailability);
             appointmentForm.addEventListener('input', updateAppointmentForm);
             appointmentForm.addEventListener('change', updateAppointmentForm);
-            window.addEventListener('pageshow', updateAppointmentForm);
+            window.addEventListener('pageshow', refreshAvailability);
             appointmentForm.addEventListener('submit', async (event) => {
                 event.preventDefault();
                 updateAppointmentForm();
@@ -177,6 +247,9 @@
                     });
                     const result = await response.json().catch(() => ({}));
                     if (!response.ok) {
+                        if (result.errors?.jadwal_id) {
+                            await refreshAvailability();
+                        }
                         const message = response.status === 419
                             ? 'Sesi kedaluwarsa. Muat ulang halaman sebelum mengirim kembali.'
                             : (result.errors ? Object.values(result.errors).flat().join(' ') : result.message);

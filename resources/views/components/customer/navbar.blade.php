@@ -7,9 +7,13 @@
         <nav class="hidden items-center gap-9 text-sm font-medium text-muted md:flex" aria-label="Navigasi utama">
             <a href="{{ route('customer.home') }}" @class(['border-b-2 border-primary py-7 text-primary' => request()->routeIs('customer.home'), 'py-7 transition hover:text-primary' => ! request()->routeIs('customer.home')])>Beranda</a>
             <a href="{{ route('customer.gudang.index') }}" @class(['border-b-2 border-primary py-7 text-primary' => request()->routeIs('customer.gudang.*'), 'py-7 transition hover:text-primary' => ! request()->routeIs('customer.gudang.*')])>Daftar Gudang</a>
-            <a href="#cara-pemesanan" class="transition hover:text-primary">Cara Pemesanan</a>
+            <a href="{{ route('customer.home') }}#cara-pemesanan" class="transition hover:text-primary">Cara Pemesanan</a>
+            <a href="{{ route('customer.cek-booking.index') }}" @class(['border-b-2 border-primary py-7 text-primary' => request()->routeIs('customer.cek-booking.*'), 'py-7 transition hover:text-primary' => ! request()->routeIs('customer.cek-booking.*')])>Cek Booking</a>
         </nav>
 
-        <a href="#" class="rounded-lg border border-primary px-4 py-2.5 text-sm font-semibold text-primary transition hover:bg-primary hover:text-white">Admin</a>
+        <span aria-disabled="true" title="Halaman Admin belum tersedia" class="cursor-not-allowed rounded-lg border border-primary px-4 py-2.5 text-sm font-semibold text-primary opacity-60">Admin</span>
     </div>
+    <nav class="border-t border-line px-5 py-3 text-sm font-semibold text-primary md:hidden" aria-label="Navigasi booking">
+        <a href="{{ route('customer.cek-booking.index') }}" class="inline-flex py-1 hover:text-primary-dark">Cek Booking</a>
+    </nav>
 </header>

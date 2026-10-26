@@ -81,9 +81,11 @@
                                             <h2 class="text-xl font-bold tracking-tight text-ink">{{ $group['unitCount'] === 1 ? "Gudang {$warehouse->unit_code}" : "Gudang Blok {$warehouse->blok}" }}</h2>
                                             <p class="mt-1 text-sm text-muted">{{ $warehouse->tipe_gudang ?? 'Tipe belum tersedia' }} · {{ $group['unitCount'] }} unit</p>
                                         </div>
-                                        @if ($group['status'])
-                                            <span class="rounded-full bg-[#e8f7ee] px-3 py-1.5 text-[11px] font-bold tracking-wide text-[#167548]">{{ strtoupper($group['status']) }}</span>
-                                        @endif
+                                        <div class="flex flex-wrap justify-end gap-2">
+                                            @foreach ($group['statusCounts'] as $statusLabel => $count)
+                                                <span @class(['rounded-full px-3 py-1.5 text-[11px] font-bold tracking-wide', 'bg-[#e8f7ee] text-[#167548]' => $statusLabel === 'Tersedia', 'bg-amber-50 text-amber-700' => $statusLabel === 'Sedang Di-keep', 'bg-slate-100 text-slate-600' => ! in_array($statusLabel, ['Tersedia', 'Sedang Di-keep'], true)])>{{ $statusLabel }} · {{ $count }} unit</span>
+                                            @endforeach
+                                        </div>
                                     </div>
                                     @if ($group['facilities']->isNotEmpty())
                                         <div class="mt-5 flex flex-wrap gap-2">
@@ -105,11 +107,7 @@
                                             @endif
                                         </div>
                                     </div>
-                                    @if ($group['availableUnitCount'] > 0)
-                                        <a href="{{ route('customer.gudang.show', ['group' => $warehouse->groupIdentifier()]) }}" class="mt-5 block w-full rounded-xl bg-primary px-4 py-3 text-center text-sm font-bold text-white transition hover:bg-primary-dark">Lihat Detail</a>
-                                    @else
-                                        <span aria-disabled="true" class="mt-5 block w-full cursor-not-allowed rounded-xl bg-slate-100 px-4 py-3 text-center text-sm font-bold text-slate-400">Tidak Tersedia</span>
-                                    @endif
+                                    <a href="{{ route('customer.gudang.show', ['group' => $warehouse->groupIdentifier(), 'unit' => $group['unitCount'] === 1 ? $warehouse->id : null]) }}" class="mt-5 block w-full rounded-xl bg-primary px-4 py-3 text-center text-sm font-bold text-white transition hover:bg-primary-dark">Lihat Detail</a>
                                 </div>
                             </article>
                         @endforeach
