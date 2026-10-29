@@ -99,6 +99,27 @@ class CustomerGudangIndexTest extends TestCase
         $response->assertSee('data-unit-id="'.$warehouse->id.'"', false);
     }
 
+    public function test_customer_detail_renders_relative_and_https_photo_urls(): void
+    {
+        config(['filesystems.disks.public.url' => 'https://customer.example/storage']);
+        DB::table('gudang')->where('unit_code', 'A5')->update([
+            'foto' => json_encode([
+                'gudang/unit-a5.jpg',
+                'https://images.example/unit-a5-interior.jpg',
+            ]),
+        ]);
+
+        $warehouse = Gudang::query()->where('unit_code', 'A5')->firstOrFail();
+
+        $this->get(route('customer.gudang.show', [
+            'group' => $warehouse->groupIdentifier(),
+            'unit' => $warehouse->id,
+        ]))
+            ->assertOk()
+            ->assertSee('https://customer.example/storage/gudang/unit-a5.jpg', false)
+            ->assertSee('https://images.example/unit-a5-interior.jpg', false);
+    }
+
     public function test_customer_group_detail_returns_not_found_for_an_invalid_identifier(): void
     {
         $this->get('/gudang/invalid-group')->assertNotFound();
