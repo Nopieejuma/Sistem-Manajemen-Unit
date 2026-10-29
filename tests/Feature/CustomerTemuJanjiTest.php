@@ -419,6 +419,18 @@ class CustomerTemuJanjiTest extends TestCase
         $this->assertDatabaseCount('temu_janji', 2);
     }
 
+    public function test_booking_submission_is_rate_limited(): void
+    {
+        $warehouse = $this->warehouse();
+        $url = route('customer.temu-janji.store', ['group' => $warehouse->groupIdentifier()]);
+
+        for ($attempt = 0; $attempt < 5; $attempt++) {
+            $this->postJson($url, [])->assertUnprocessable();
+        }
+
+        $this->postJson($url, [])->assertTooManyRequests();
+    }
+
     public function test_past_or_started_slots_today_cannot_be_selected_or_submitted(): void
     {
         $this->travelTo(new \DateTimeImmutable('2026-11-01 09:00:00', new \DateTimeZone('Asia/Jakarta')));

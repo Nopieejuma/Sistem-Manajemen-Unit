@@ -2,14 +2,18 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
-#[Table(name: 'gudang', key: 'id', keyType: 'string', incrementing: false, timestamps: false)]
 class Gudang extends Model
 {
+    public const array WarehouseTypes = ['Versa', 'Heksa', 'MAXI 24', 'VERTA 56'];
+
+    public const array ManualStatuses = ['tersedia', 'tidak tersedia', 'digunakan'];
+
     private const array GroupingAttributes = [
         'blok',
         'tipe_gudang',
@@ -19,21 +23,60 @@ class Gudang extends Model
         'harga_sewa',
     ];
 
-    /**
-     * Get the attribute casts for the model.
-     *
-     * @return array<string, string>
-     */
+    protected $table = 'gudang';
+
+    protected $primaryKey = 'id';
+
+    public $incrementing = false;
+
+    public $timestamps = false;
+
+    protected $keyType = 'string';
+
+    protected $guarded = ['id'];
+
     protected function casts(): array
     {
         return [
             'foto' => 'array',
             'fasilitas' => 'array',
-            'harga_sewa' => 'decimal:2',
+            'kavling_l' => 'decimal:2',
+            'kavling_p' => 'decimal:2',
             'luas_kavling' => 'decimal:2',
-            'grand_total' => 'decimal:2',
+            'lt1_l' => 'decimal:2',
+            'lt1_p' => 'decimal:2',
+            'luas_lt1' => 'decimal:2',
+            'lt2_l' => 'decimal:2',
+            'lt2_p' => 'decimal:2',
+            'extra_m2' => 'decimal:2',
+            'luas_lt2' => 'decimal:2',
+            'pos_l' => 'decimal:2',
+            'pos_p' => 'decimal:2',
+            'luas_pos' => 'decimal:2',
+            'tinggi' => 'decimal:2',
             'total_luas_bangunan' => 'decimal:2',
+            'grand_total' => 'decimal:2',
+            'harga_sewa' => 'decimal:2',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::creating(function (Gudang $gudang): void {
+            if (empty($gudang->getKey())) {
+                $gudang->setAttribute($gudang->getKeyName(), (string) Str::uuid());
+            }
+        });
+    }
+
+    public function temuJanji(): HasMany
+    {
+        return $this->hasMany(TemuJanji::class, 'gudang_id');
+    }
+
+    public function hasApprovedBookings(): bool
+    {
+        return $this->temuJanji()->where('status', 'approved')->exists();
     }
 
     public function statusLabel(): string
@@ -59,16 +102,27 @@ class Gudang extends Model
         $photoUrls = [];
 
         foreach ($this->foto ?? [] as $photo) {
-            if (! is_string($photo) || ! filter_var($photo, FILTER_VALIDATE_URL)) {
+            if (! is_string($photo)) {
                 continue;
             }
 
-            if (parse_url($photo, PHP_URL_SCHEME) === 'https') {
-                $photoUrls[] = $photo;
+            $url = $this->photoUrl($photo);
+
+            if (filter_var($url, FILTER_VALIDATE_URL) && parse_url($url, PHP_URL_SCHEME) === 'https') {
+                $photoUrls[] = $url;
             }
         }
 
         return $photoUrls;
+    }
+
+    public function photoUrl(string $photo): string
+    {
+        if (filter_var($photo, FILTER_VALIDATE_URL)) {
+            return $photo;
+        }
+
+        return Storage::disk('public')->url($photo);
     }
 
     public function groupKey(): string

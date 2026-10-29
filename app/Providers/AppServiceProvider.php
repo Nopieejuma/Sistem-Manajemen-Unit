@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Str;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -23,6 +24,16 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        RateLimiter::for('admin-login', function (Request $request): Limit {
+            $username = Str::transliterate(Str::lower($request->string('username')->toString()));
+
+            return Limit::perMinute(5)->by($username.'|'.$request->ip());
+        });
+
+        RateLimiter::for('customer-booking-submit', function (Request $request): Limit {
+            return Limit::perMinute(5)->by($request->ip());
+        });
+
         RateLimiter::for('customer-booking-lookup', function (Request $request): Limit {
             return Limit::perMinute(5)->by($request->ip())
                 ->response(function (Request $request, array $headers): Response {
