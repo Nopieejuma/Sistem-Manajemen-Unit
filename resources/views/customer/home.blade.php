@@ -23,7 +23,11 @@
                     </div>
                     <div class="relative mx-auto w-full max-w-xl">
                         <div class="absolute -inset-4 rounded-[2rem] bg-primary/10 blur-2xl"></div>
-                        <img src="{{ asset('images/warehouses/warehouse-a5.png') }}" alt="Bangunan gudang modern di kawasan industri" class="relative h-[340px] w-full rounded-[1.75rem] object-cover shadow-2xl sm:h-[410px]">
+                        @if ($heroPhotoUrl = $warehouses->pluck('image')->filter()->first())
+                            <img src="{{ $heroPhotoUrl }}" alt="Foto gudang tersedia" class="relative h-[340px] w-full rounded-[1.75rem] object-cover shadow-2xl sm:h-[410px]">
+                        @else
+                            <div class="relative flex h-[340px] w-full items-center justify-center rounded-[1.75rem] bg-surface text-sm text-muted shadow-2xl sm:h-[410px]">Foto belum tersedia</div>
+                        @endif
                         <div class="absolute -bottom-5 -left-3 rounded-xl border border-white/70 bg-white/95 px-5 py-4 shadow-lg backdrop-blur sm:left-6">
                             <p class="text-2xl font-bold tracking-tight text-ink">{{ number_format($totalUnits, 0, ',', '.') }}</p>
                             <p class="mt-1 text-xs font-medium text-muted">Unit gudang terdaftar</p>

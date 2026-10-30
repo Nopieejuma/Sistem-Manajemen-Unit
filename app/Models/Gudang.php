@@ -106,9 +106,18 @@ class Gudang extends Model
                 continue;
             }
 
+            $isRelativePath = preg_match('~^gudang/[a-zA-Z0-9_./-]+$~D', $photo) === 1
+                && ! in_array('..', explode('/', $photo), true);
+
+            if (! $isRelativePath && ! filter_var($photo, FILTER_VALIDATE_URL)) {
+                continue;
+            }
+
             $url = $this->photoUrl($photo);
 
-            if (filter_var($url, FILTER_VALIDATE_URL) && parse_url($url, PHP_URL_SCHEME) === 'https') {
+            if (filter_var($url, FILTER_VALIDATE_URL)
+                && (parse_url($url, PHP_URL_SCHEME) === 'https'
+                    || ($isRelativePath && app()->environment('local', 'testing') && parse_url($url, PHP_URL_SCHEME) === 'http'))) {
                 $photoUrls[] = $url;
             }
         }
@@ -135,13 +144,7 @@ class Gudang extends Model
 
     public function groupIdentifier(): string
     {
-        $attributes = [];
-
-        foreach (self::GroupingAttributes as $attribute) {
-            $attributes[$attribute] = $this->getAttribute($attribute);
-        }
-
-        return rtrim(strtr(base64_encode(json_encode($attributes, JSON_THROW_ON_ERROR)), '+/', '-_'), '=');
+        return (string) $this->getKey();
     }
 
     /**
@@ -149,6 +152,12 @@ class Gudang extends Model
      */
     public static function groupingAttributesFromIdentifier(string $identifier): ?array
     {
+        if (Str::isUuid($identifier)) {
+            $warehouse = static::query()->find($identifier);
+
+            return $warehouse?->only(self::GroupingAttributes);
+        }
+
         $encoded = strtr($identifier, '-_', '+/');
         $encoded .= str_repeat('=', (4 - strlen($encoded) % 4) % 4);
         $decoded = base64_decode($encoded, true);

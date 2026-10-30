@@ -93,7 +93,7 @@ class CustomerHomeTest extends TestCase
         $this->get($url)->assertOk()->assertSee('data-unit-id="'.$warehouse->id.'"', false);
     }
 
-    public function test_recommendations_use_database_photos_and_existing_fallback(): void
+    public function test_recommendations_use_database_photos_and_honest_placeholder(): void
     {
         $this->createWarehouse('A1');
         $this->createWarehouse('A2', ['foto' => json_encode(['https://example.com/warehouse.jpg'])]);
@@ -102,9 +102,10 @@ class CustomerHomeTest extends TestCase
         $response = $this->get('/');
 
         $response->assertViewHas('warehouses', fn ($groups): bool => $groups[0]['image'] === 'https://example.com/warehouse.jpg'
-            && $groups[1]['image'] === asset('images/warehouses/warehouse-a5.png'));
+            && $groups[1]['image'] === null);
         $response->assertSee('src="https://example.com/warehouse.jpg"', false);
-        $response->assertSee('Harga sewa belum tersedia');
+        $response->assertSee('Harga belum tersedia');
+        $response->assertSee('Foto belum tersedia');
     }
 
     public function test_empty_warehouse_table_renders_zero_statistics_and_no_recommendations(): void

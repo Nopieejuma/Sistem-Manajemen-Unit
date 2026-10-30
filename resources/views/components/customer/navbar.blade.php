@@ -11,9 +11,10 @@
             <a href="{{ route('customer.cek-booking.index') }}" @class(['border-b-2 border-primary py-7 text-primary' => request()->routeIs('customer.cek-booking.*'), 'py-7 transition hover:text-primary' => ! request()->routeIs('customer.cek-booking.*')])>Cek Booking</a>
         </nav>
 
-        <span aria-disabled="true" title="Halaman Admin belum tersedia" class="cursor-not-allowed rounded-lg border border-primary px-4 py-2.5 text-sm font-semibold text-primary opacity-60">Admin</span>
+        <a href="{{ route('admin.login') }}" class="rounded-lg border border-primary px-4 py-2.5 text-sm font-semibold text-primary">Admin</a>
     </div>
-    <nav class="border-t border-line px-5 py-3 text-sm font-semibold text-primary md:hidden" aria-label="Navigasi booking">
+    <nav class="flex flex-wrap gap-5 border-t border-line px-5 py-3 text-sm font-semibold text-primary md:hidden" aria-label="Navigasi booking">
+        <a href="{{ route('customer.gudang.index') }}" class="inline-flex py-1 hover:text-primary-dark">Daftar Gudang</a>
         <a href="{{ route('customer.cek-booking.index') }}" class="inline-flex py-1 hover:text-primary-dark">Cek Booking</a>
     </nav>
 </header>

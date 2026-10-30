@@ -595,6 +595,7 @@ class BookingConcurrencyTest extends TestCase
 
         do {
             $workerPids = $this->workerBackendPids($workers);
+            DB::select('SELECT pg_stat_clear_snapshot()');
             $activity = $workerPids === [] ? collect() : DB::table('pg_stat_activity')->select([
                 'application_name', 'pid', 'state', 'wait_event_type', 'wait_event',
             ])->whereIn('pid', $workerPids)->get();
@@ -626,6 +627,7 @@ class BookingConcurrencyTest extends TestCase
 
         do {
             $workerPids = $this->workerBackendPids($workers);
+            DB::select('SELECT pg_stat_clear_snapshot()');
             $idle = $workerPids === [] ? 0 : DB::table('pg_stat_activity')->whereIn('pid', $workerPids)
                 ->where('state', 'idle in transaction')->count();
 

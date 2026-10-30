@@ -133,7 +133,7 @@ class GudangController extends Controller
             ?? $units->first();
 
         return view('customer.gudang.show', [
-            'groupIdentifier' => $group,
+            'groupIdentifier' => $selectedUnit->groupIdentifier(),
             'units' => $units,
             'selectedUnit' => $selectedUnit,
             'hasSelectedUnit' => $requestedUnitId !== '' && $units->contains('id', $requestedUnitId),

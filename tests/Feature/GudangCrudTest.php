@@ -9,6 +9,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use PHPUnit\Framework\Attributes\TestWith;
 use Tests\TestCase;
 
 class GudangCrudTest extends TestCase
@@ -25,7 +26,53 @@ class GudangCrudTest extends TestCase
     public function test_admin_can_view_gudang_index_and_create_form(): void
     {
         $this->get(route('admin.gudang.index'))->assertOk();
-        $this->get(route('admin.gudang.create'))->assertOk();
+        $this->get(route('admin.gudang.create'))->assertOk()
+            ->assertSeeText('Harga Sewa per tahun')
+            ->assertDontSee('placeholder="50000000"', false);
+    }
+
+    public function test_customer_and_admin_display_the_same_database_price_per_year_without_conversion(): void
+    {
+        $gudang = Gudang::create($this->validGudangData());
+        $before = DB::table('gudang')->get()->toJson();
+
+        foreach ([
+            route('customer.home'),
+            route('customer.gudang.index'),
+            route('customer.gudang.show', ['group' => $gudang->groupIdentifier(), 'unit' => $gudang->id]),
+            route('customer.temu-janji.create', ['group' => $gudang->groupIdentifier(), 'unit' => $gudang->id]),
+            route('admin.gudang.index'),
+        ] as $url) {
+            $response = $this->get($url)->assertOk()->assertSeeText('per tahun')
+                ->assertDontSeeText('/ bulan')->assertDontSeeText('/ bln');
+            $this->assertMatchesRegularExpression('/Rp\s*50\.000\.000(?![0-9.])/u', strip_tags($response->getContent()));
+        }
+
+        $this->get(route('admin.gudang.edit', $gudang->id))->assertOk()
+            ->assertSeeText('Harga Sewa per tahun')
+            ->assertSee('name="harga_sewa" value="50000000.00"', false);
+        $this->assertSame($before, DB::table('gudang')->get()->toJson());
+    }
+
+    #[TestWith([null])]
+    #[TestWith([0])]
+    public function test_missing_price_has_an_honest_placeholder_on_customer_and_admin_pages(?int $price): void
+    {
+        $gudang = Gudang::create(array_replace($this->validGudangData(), ['harga_sewa' => $price]));
+        $before = DB::table('gudang')->get()->toJson();
+
+        foreach ([
+            route('customer.home'),
+            route('customer.gudang.index'),
+            route('customer.gudang.show', ['group' => $gudang->groupIdentifier(), 'unit' => $gudang->id]),
+            route('customer.temu-janji.create', ['group' => $gudang->groupIdentifier(), 'unit' => $gudang->id]),
+            route('admin.gudang.index'),
+        ] as $url) {
+            $this->get($url)->assertOk()->assertSeeText('Harga belum tersedia')
+                ->assertDontSeeText('Rp0')->assertDontSeeText('Rp 0');
+        }
+
+        $this->assertSame($before, DB::table('gudang')->get()->toJson());
     }
 
     public function test_admin_can_create_gudang(): void
@@ -152,7 +199,7 @@ class GudangCrudTest extends TestCase
 
     public function test_admin_can_upload_and_delete_only_selected_owned_photo(): void
     {
-        Storage::fake('public');
+        Storage::fake('public', ['url' => 'http://localhost:8000/storage']);
         $gudang = Gudang::create(array_merge($this->validGudangData(), ['foto' => ['gudang/keep.jpg', 'gudang/remove.jpg']]));
         Storage::disk('public')->put('gudang/keep.jpg', 'keep');
         Storage::disk('public')->put('gudang/remove.jpg', 'remove');
@@ -172,6 +219,9 @@ class GudangCrudTest extends TestCase
         Storage::disk('public')->assertExists('gudang/keep.jpg');
         Storage::disk('public')->assertMissing('gudang/remove.jpg');
         Storage::disk('public')->assertExists($gudang->foto[1]);
+        $this->get(route('customer.gudang.show', ['group' => $gudang->groupIdentifier()]))
+            ->assertOk()->assertViewHas('photoUrls', fn (array $urls): bool => count($urls) === 2
+                && $urls[1] === 'http://localhost:8000/storage/'.$gudang->foto[1]);
     }
 
     public function test_admin_cannot_delete_a_photo_not_attached_to_warehouse(): void

@@ -90,9 +90,9 @@
                                     <span class="mt-1 inline-flex rounded-full px-2 py-0.5 text-[9px] font-bold uppercase {{ $item->status === 'tersedia' ? 'bg-emerald-100 text-emerald-800' : ($item->status === 'sedang di-keep' ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-600') }}">{{ $item->status }}</span>
                                 </div>
                                 <div class="text-right">
-                                    <span class="text-[9px] text-slate-400 block uppercase font-bold">Sewa/Thn</span>
+                                    <span class="text-[9px] text-slate-400 block uppercase font-bold">Sewa per tahun</span>
                                     <span class="text-xs font-bold text-emerald-600">
-                                        {{ $item->harga_sewa > 0 ? 'Rp ' . number_format($item->harga_sewa, 0, ',', '.') : '-' }}
+                                        {{ $item->harga_sewa > 0 ? 'Rp ' . number_format($item->harga_sewa, 0, ',', '.') : 'Harga belum tersedia' }}
                                     </span>
                                 </div>
                             </div>

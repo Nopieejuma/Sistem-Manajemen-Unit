@@ -39,7 +39,7 @@
                             Blok {{ $warehouse->blok ?? '—' }} ·
                             {{ $warehouse->grand_total ? number_format((float) $warehouse->grand_total, 0, ',', '.') : ($warehouse->total_luas_bangunan ? number_format((float) $warehouse->total_luas_bangunan, 0, ',', '.') : '—') }} m² ·
                             @if ((float) $warehouse->harga_sewa > 0)
-                                Rp{{ number_format((float) $warehouse->harga_sewa, 0, ',', '.') }} / bulan
+                                Rp{{ number_format((float) $warehouse->harga_sewa, 0, ',', '.') }} per tahun
                             @else
                                 Harga belum tersedia
                             @endif

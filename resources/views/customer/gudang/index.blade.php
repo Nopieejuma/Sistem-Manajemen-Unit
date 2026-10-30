@@ -13,7 +13,7 @@
 
         <main class="min-h-screen bg-surface py-8 sm:py-10">
             <section class="mx-auto max-w-7xl px-5 sm:px-8 lg:px-10">
-                <form action="{{ route('customer.gudang.index') }}" class="flex flex-wrap items-center gap-3" method="GET">
+                <form action="{{ route('customer.gudang.index') }}" class="relative flex flex-wrap items-center gap-3" method="GET">
                     <input type="hidden" name="status" value="{{ $filters['status'] }}">
 
                     <div class="relative min-w-0 grow basis-72 xl:basis-[36rem]">
@@ -29,12 +29,12 @@
                         @endforeach
                     </div>
 
-                    <details class="relative">
+                    <details>
                         <summary class="flex cursor-pointer list-none items-center gap-2 rounded-2xl border border-line bg-white px-4 py-3 text-sm font-semibold text-muted transition hover:border-primary/30 hover:text-primary">
                             <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 5h16l-6 7v5l-4 2v-7z"></path></svg>
                             Filter
                         </summary>
-                        <div class="absolute right-0 z-10 mt-2 w-72 rounded-2xl border border-line bg-white p-4 shadow-xl">
+                        <div class="absolute left-0 z-10 mt-2 w-72 max-w-full rounded-2xl border border-line bg-white p-4 shadow-xl">
                             <div>
                                 <label for="blok" class="text-sm font-semibold text-ink">Blok</label>
                                 <select id="blok" name="blok" class="mt-2 w-full rounded-xl border border-line bg-white px-3 py-2.5 text-sm text-ink outline-none focus:border-primary focus:ring-2 focus:ring-primary/15">
@@ -73,7 +73,7 @@
                                 @if ($photoUrl = $warehouse->firstPhotoUrl())
                                     <img src="{{ $photoUrl }}" alt="Gudang {{ $warehouse->unit_code }}" class="h-52 w-full object-cover" referrerpolicy="no-referrer">
                                 @else
-                                    <img src="{{ asset('images/warehouses/warehouse-a5.png') }}" alt="Foto representatif gudang" class="h-52 w-full object-cover">
+                                    <div class="flex h-52 w-full items-center justify-center bg-surface text-sm text-muted">Foto belum tersedia</div>
                                 @endif
                                 <div class="p-5">
                                     <div class="flex items-start justify-between gap-4">
@@ -101,9 +101,9 @@
                                         <p class="text-base font-semibold text-ink">{{ $warehouse->grand_total ? number_format((float) $warehouse->grand_total, 0, ',', '.') : ($warehouse->total_luas_bangunan ? number_format((float) $warehouse->total_luas_bangunan, 0, ',', '.') : '—') }} m²</p>
                                         <div class="text-right">
                                             @if ((float) $warehouse->harga_sewa > 0)
-                                                <p class="text-base font-bold text-ink">Rp{{ number_format((float) $warehouse->harga_sewa, 0, ',', '.') }} <span class="font-medium text-muted">/ bln</span></p>
+                                                <p class="text-base font-bold text-ink">Rp{{ number_format((float) $warehouse->harga_sewa, 0, ',', '.') }} <span class="font-medium text-muted">per tahun</span></p>
                                             @else
-                                                <p class="text-sm text-muted">Harga sewa belum tersedia</p>
+                                                <p class="text-sm text-muted">Harga belum tersedia</p>
                                             @endif
                                         </div>
                                     </div>

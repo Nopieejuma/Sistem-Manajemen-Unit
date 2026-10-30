@@ -70,7 +70,7 @@ class CustomerTemuJanjiTest extends TestCase
             ->assertSee('Gudang C17')
             ->assertSee('Blok C')
             ->assertSee('4.400 m²')
-            ->assertSee('Rp16.000.000 / bulan')
+            ->assertSee('Rp16.000.000 per tahun')
             ->assertSee('TERSEDIA')
             ->assertSee('https://example.com/unit-c17.jpg', false)
             ->assertSee('min="'.today()->toDateString().'"', false)
@@ -91,7 +91,7 @@ class CustomerTemuJanjiTest extends TestCase
         $this->get(route('customer.gudang.show', ['group' => $warehouse->groupIdentifier(), 'unit' => $otherUnit->id]))
             ->assertOk()
             ->assertViewHas('hasSelectedUnit', true)
-            ->assertSee(route('customer.temu-janji.create', ['group' => $warehouse->groupIdentifier(), 'unit' => $otherUnit->id]), false);
+            ->assertSee(route('customer.temu-janji.create', ['group' => $otherUnit->groupIdentifier(), 'unit' => $otherUnit->id]), false);
 
         $this->get(route('customer.temu-janji.create', ['group' => $warehouse->groupIdentifier(), 'unit' => $otherUnit->id]))
             ->assertOk()
@@ -206,6 +206,21 @@ class CustomerTemuJanjiTest extends TestCase
             ->assertViewHas('timeSlots', fn (array $slots): bool => array_column($slots, 'id') === [$earlier, $later])
             ->assertDontSee($inactive)
             ->assertDontSee('Development Preview');
+    }
+
+    public function test_stable_form_and_submit_links_survive_admin_specification_changes(): void
+    {
+        $warehouse = $this->warehouse();
+        $identifier = $warehouse->groupIdentifier();
+        $payload = $this->payload($warehouse);
+        $warehouse->update(['blok' => 'Z', 'tipe_gudang' => 'Heksa', 'harga_sewa' => 19000000, 'grand_total' => 5100]);
+
+        $this->get(route('customer.temu-janji.create', ['group' => $identifier, 'unit' => $warehouse->id]))
+            ->assertOk()->assertSee('Rp19.000.000');
+        $this->postJson(route('customer.temu-janji.store', ['group' => $identifier]), $payload)
+            ->assertCreated()->assertJsonPath('status', 'pending');
+        $this->assertDatabaseHas('temu_janji', ['gudang_id' => $warehouse->id, 'status' => 'pending']);
+        $this->assertDatabaseHas('gudang', ['id' => $warehouse->id, 'status' => 'tersedia']);
     }
 
     public function test_pending_booking_uses_database_values_and_does_not_keep_the_unit(): void

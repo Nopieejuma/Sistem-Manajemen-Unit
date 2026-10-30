@@ -39,7 +39,7 @@ class HomeController extends Controller
                         ? 'Rp'.number_format((float) $warehouse->harga_sewa, 0, ',', '.')
                         : null,
                     'facilities' => $facilitySets->count() === 1 ? ($warehouse->fasilitas ?? []) : [],
-                    'image' => $photoUrl ?? asset('images/warehouses/warehouse-a5.png'),
+                    'image' => $photoUrl,
                     'detailUrl' => route('customer.gudang.show', ['group' => $warehouse->groupIdentifier()]),
                 ];
             })

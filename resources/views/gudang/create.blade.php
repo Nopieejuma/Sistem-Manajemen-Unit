@@ -67,8 +67,8 @@
                     <input type="number" step="0.01" name="tinggi" required value="{{ old('tinggi') }}" placeholder="8.5" class="w-full text-xs px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none">
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">Harga Sewa / Thn</label>
-                    <input type="number" name="harga_sewa" value="{{ old('harga_sewa') }}" placeholder="50000000" class="w-full text-xs px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Harga Sewa per tahun</label>
+                    <input type="number" name="harga_sewa" value="{{ old('harga_sewa') }}" placeholder="Masukkan harga sewa" class="w-full text-xs px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none">
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1">Kavling Lebar (m) *</label>

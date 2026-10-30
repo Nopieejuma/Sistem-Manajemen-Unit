@@ -73,7 +73,7 @@
                     <input type="number" step="0.01" name="tinggi" required value="{{ old('tinggi', $gudang->tinggi) }}" class="w-full text-xs px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none">
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">Harga Sewa / Thn</label>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Harga Sewa per tahun</label>
                     <input type="number" name="harga_sewa" value="{{ old('harga_sewa', $gudang->harga_sewa) }}" class="w-full text-xs px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none">
                 </div>
                 <div>

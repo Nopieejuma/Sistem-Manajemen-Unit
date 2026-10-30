@@ -125,6 +125,74 @@ class CustomerGudangIndexTest extends TestCase
         $this->get('/gudang/invalid-group')->assertNotFound();
     }
 
+    #[TestWith([[]])]
+    #[TestWith([['https://images.example/actual.jpg']])]
+    /** @param array<int, string> $photos */
+    public function test_gallery_uses_only_database_photos_without_sample_images(array $photos): void
+    {
+        $warehouse = Gudang::query()->where('unit_code', 'A5')->firstOrFail();
+        $warehouse->update(['foto' => $photos]);
+
+        $response = $this->get(route('customer.gudang.show', ['group' => $warehouse->groupIdentifier()]));
+        $response->assertOk()->assertDontSee('/images/warehouses/', false);
+        $this->get('/gudang')->assertOk()->assertDontSee('/images/warehouses/', false);
+
+        if ($photos === []) {
+            $response->assertSee('Foto belum tersedia')->assertDontSee('<button type="button" data-gallery-thumbnail', false);
+        } else {
+            $response->assertViewHas('photoUrls', $photos)->assertSee('src="https://images.example/actual.jpg"', false);
+        }
+    }
+
+    #[TestWith(['local', 'http://localhost:8000/storage', true])]
+    #[TestWith(['production', 'http://localhost:8000/storage', false])]
+    #[TestWith(['production', 'https://warehouse.example/storage', true])]
+    public function test_relative_public_photos_use_http_only_in_development(string $environment, string $diskUrl, bool $visible): void
+    {
+        $this->app->instance('env', $environment);
+        config(['filesystems.disks.public.url' => $diskUrl]);
+        $warehouse = Gudang::query()->where('unit_code', 'A5')->firstOrFail();
+        $warehouse->update(['foto' => [
+            'gudang/actual.jpg', 'http://untrusted.example/photo.jpg', '//untrusted.example/photo.jpg',
+            'gudang/../secret.jpg', 'gudang/%2e%2e/secret.jpg', 'javascript:alert(1)',
+        ]]);
+
+        $this->get(route('customer.gudang.show', ['group' => $warehouse->groupIdentifier()]))
+            ->assertOk()
+            ->assertViewHas('photoUrls', $visible ? [$diskUrl.'/gudang/actual.jpg'] : [])
+            ->assertDontSee('untrusted.example', false)->assertDontSee('secret.jpg', false)
+            ->assertDontSee('javascript:alert(1)', false);
+    }
+
+    public function test_stable_detail_link_survives_changes_to_all_grouping_attributes(): void
+    {
+        $warehouse = Gudang::query()->where('unit_code', 'A5')->firstOrFail();
+        $identifier = $warehouse->groupIdentifier();
+        $url = route('customer.gudang.show', ['group' => $identifier, 'unit' => $warehouse->id]);
+        $warehouse->update([
+            'blok' => 'Z', 'tipe_gudang' => 'Heksa', 'harga_sewa' => 18000000,
+            'luas_kavling' => 8000, 'total_luas_bangunan' => 5000, 'grand_total' => 5012,
+        ]);
+
+        $this->assertSame($identifier, $warehouse->groupIdentifier());
+        $this->get($url)->assertOk()->assertSee('Rp18.000.000')->assertSee('5.012')
+            ->assertViewHas('selectedUnit', fn (Gudang $unit): bool => $unit->id === $warehouse->id && $unit->blok === 'Z');
+
+        $warehouse->delete();
+        $this->get($url)->assertNotFound();
+    }
+
+    public function test_legacy_detail_links_still_work_and_emit_stable_booking_links(): void
+    {
+        $warehouse = Gudang::query()->where('unit_code', 'A5')->firstOrFail();
+        $attributes = Gudang::groupingAttributesFromIdentifier($warehouse->groupIdentifier());
+        $legacyIdentifier = rtrim(strtr(base64_encode(json_encode($attributes)), '+/', '-_'), '=');
+
+        $this->get(route('customer.gudang.show', ['group' => $legacyIdentifier, 'unit' => $warehouse->id]))
+            ->assertOk()->assertViewHas('groupIdentifier', $warehouse->id)
+            ->assertSee(route('customer.temu-janji.create', ['group' => $warehouse->id, 'unit' => $warehouse->id]), false);
+    }
+
     public function test_array_filter_input_is_rejected_instead_of_causing_server_error(): void
     {
         $this->getJson('/gudang?search[]=A5')->assertUnprocessable()->assertJsonValidationErrors('search');

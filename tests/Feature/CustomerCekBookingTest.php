@@ -199,8 +199,10 @@ class CustomerCekBookingTest extends TestCase
         $this->assertSame(route('customer.home').'#beranda', $links['Beranda']);
         $this->assertSame(route('customer.home').'#cara-pemesanan', $links['Cara Pemesanan']);
         $this->assertSame(route('customer.gudang.index'), $links['Daftar Gudang']);
-        $this->assertSame(0, $xpath->query('//header//a[normalize-space(.)="Admin"]')->length);
-        $this->assertSame(1, $xpath->query('//header//span[@aria-disabled="true" and normalize-space(.)="Admin"]')->length);
+        $this->assertSame(route('admin.login'), $xpath->query('//header//a[normalize-space(.)="Admin"]')->item(0)->getAttribute('href'));
+        $this->assertSame(0, $xpath->query('//header//span[@aria-disabled="true" and normalize-space(.)="Admin"]')->length);
+        $this->assertSame(route('customer.gudang.index'), $xpath->query('//header//nav[@aria-label="Navigasi booking"]/a[normalize-space(.)="Daftar Gudang"]')->item(0)->getAttribute('href'));
+        $this->get(route('admin.login'))->assertOk();
     }
 
     /** @return array<string, string> */
