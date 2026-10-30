@@ -12,6 +12,7 @@
     @include('layouts.sidebar')
 
     <main class="flex-1 h-screen overflow-y-auto p-5 md:p-8">
+        <x-admin-customer-link />
         <div class="mb-6 flex flex-wrap items-start justify-between gap-4">
             <div>
                 <a href="{{ route('admin.temu-janji.index') }}" class="mb-3 inline-flex text-xs font-semibold text-blue-600 hover:text-blue-700">← Kembali ke daftar booking</a>

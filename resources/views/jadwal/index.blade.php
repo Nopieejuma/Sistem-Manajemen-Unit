@@ -12,6 +12,7 @@
     @include('layouts.sidebar')
 
     <main class="flex-1 h-screen overflow-y-auto p-5 md:p-8">
+        <x-admin-customer-link />
         <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
                 <h1 class="text-xl font-bold text-slate-900">Jadwal &amp; Kuota</h1>

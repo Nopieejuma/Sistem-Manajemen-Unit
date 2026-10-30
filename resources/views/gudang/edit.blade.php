@@ -11,6 +11,7 @@
 <body class="bg-slate-50 min-h-screen p-6">
 
     <div class="max-w-4xl mx-auto bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 sm:p-8">
+        <x-admin-customer-link />
         <div class="flex justify-between items-center mb-6">
             <div>
                 <h1 class="text-xl font-bold text-slate-900">Edit Data Gudang</h1>

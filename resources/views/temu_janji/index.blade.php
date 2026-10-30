@@ -12,6 +12,7 @@
     @include('layouts.sidebar')
 
     <main class="flex-1 h-screen overflow-y-auto p-5 md:p-8">
+        <x-admin-customer-link />
         <div class="mb-6">
             <h1 class="text-xl font-bold text-slate-900">Manajemen Temu Janji</h1>
             <p class="text-slate-500 text-xs">Kelola booking kunjungan dan permohonan pelanggan</p>
