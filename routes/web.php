@@ -10,6 +10,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\GudangController;
 use App\Http\Controllers\JadwalController;
 use App\Http\Controllers\TemuJanjiController;
+use App\Http\Controllers\WarehousePhotoUploadController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [HomeController::class, 'index'])->name('customer.home');
@@ -39,6 +40,10 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
     });
 
     Route::middleware('auth')->group(function (): void {
+        Route::post('/warehouse-photo-uploads', [WarehousePhotoUploadController::class, 'store'])
+            ->middleware('throttle:30,1')->name('warehouse-photo-uploads.store');
+        Route::delete('/warehouse-photo-uploads/{upload}', [WarehousePhotoUploadController::class, 'destroy'])
+            ->middleware('throttle:60,1')->name('warehouse-photo-uploads.destroy');
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
         Route::resource('gudang', GudangController::class)->except(['show']);

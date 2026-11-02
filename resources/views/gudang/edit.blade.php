@@ -28,7 +28,8 @@
             </div>
         @endif
 
-        <form action="{{ route('admin.gudang.update', $gudang->id) }}" method="POST" enctype="multipart/form-data" class="space-y-6">
+        <form action="{{ route('admin.gudang.update', $gudang->id) }}" method="POST" enctype="multipart/form-data" class="space-y-6" data-warehouse-photo-form data-warehouse-id="{{ $gudang->id }}" data-existing-photos="{{ count(is_array($gudang->foto) ? $gudang->foto : (json_decode($gudang->foto ?? '[]', true) ?? [])) }}"
+            @if(config('filesystems.warehouse_direct_upload')) data-direct-upload-url="{{ route('admin.warehouse-photo-uploads.store') }}" @endif>
             @csrf
             @method('PUT')
 

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Gudang;
+use App\Services\WarehousePhotoStorage;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -16,6 +17,8 @@ use Throwable;
 
 class GudangController extends Controller
 {
+    public function __construct(private WarehousePhotoStorage $photoStorage) {}
+
     private const array Facilities = [
         'CCTV 24 Jam',
         'Area Parkir Luas',
@@ -46,7 +49,13 @@ class GudangController extends Controller
         $photos = $this->storeUploadedPhotos($request);
 
         try {
-            Gudang::query()->create($this->warehouseAttributes($data, $photos));
+            DB::transaction(function () use ($request, $data, $photos): void {
+                $warehouse = Gudang::query()->create($this->warehouseAttributes($data, $photos));
+                if ($this->photoStorage->enabled()) {
+                    $urls = $this->photoStorage->attach($data['photo_uploads'] ?? [], $request->user(), $warehouse, true);
+                    $warehouse->update(['foto' => $urls]);
+                }
+            });
         } catch (Throwable $exception) {
             $this->deleteOwnedPhotos($photos);
 
@@ -74,7 +83,7 @@ class GudangController extends Controller
         $newPhotos = $this->storeUploadedPhotos($request);
 
         try {
-            $removedPhotos = DB::transaction(function () use ($data, $gudang, $newPhotos): array {
+            $removedPhotos = DB::transaction(function () use ($request, $data, $gudang, $newPhotos): array {
                 $warehouse = Gudang::query()->whereKey($gudang->getKey())->lockForUpdate()->firstOrFail();
                 $hasApprovedBooking = $warehouse->temuJanji()->where('status', 'approved')->exists();
                 $requestedStatus = $data['status'] ?? null;
@@ -98,7 +107,14 @@ class GudangController extends Controller
                     $existingPhotos,
                     fn (string $photo): bool => ! in_array($photo, $photosToRemove, true),
                 ));
-                $photos = array_values(array_merge($remainingPhotos, $newPhotos));
+                $incomingCount = count($newPhotos) + count($data['photo_uploads'] ?? []);
+                if (count($remainingPhotos) + $incomingCount > 20) {
+                    throw ValidationException::withMessages(['foto' => 'Maksimal 20 foto per gudang, termasuk foto lama yang dipertahankan.']);
+                }
+                $objectPhotos = $this->photoStorage->enabled()
+                    ? $this->photoStorage->attach($data['photo_uploads'] ?? [], $request->user(), $warehouse)
+                    : [];
+                $photos = array_values(array_merge($remainingPhotos, $newPhotos, $objectPhotos));
 
                 $status = $requestedStatus ?? $warehouse->status;
 
@@ -111,6 +127,7 @@ class GudangController extends Controller
                 }
 
                 $warehouse->update($this->warehouseAttributes($data, $photos, $status));
+                $this->photoStorage->queueDeletion($warehouse, $photosToRemove);
 
                 return $photosToRemove;
             });
@@ -137,6 +154,7 @@ class GudangController extends Controller
             }
 
             $photos = $this->photoList($warehouse->foto);
+            $this->photoStorage->queueDeletion($warehouse, $photos);
             $warehouse->delete();
 
             return $photos;
@@ -180,8 +198,10 @@ class GudangController extends Controller
             'status' => $statusRules,
             'fasilitas' => ['nullable', 'array'],
             'fasilitas.*' => ['string', Rule::in(self::Facilities), 'distinct'],
-            'foto' => ['nullable', 'array', 'max:20'],
+            'foto' => [$this->photoStorage->enabled() ? 'prohibited' : 'nullable', 'array', 'max:20'],
             'foto.*' => ['image', 'mimes:jpeg,jpg,png,webp', 'max:2048'],
+            'photo_uploads' => [$this->photoStorage->enabled() ? 'nullable' : 'prohibited', 'array', 'max:20'],
+            'photo_uploads.*' => ['required', 'uuid', 'distinct'],
             'hapus_foto' => ['nullable', 'array'],
             'hapus_foto.*' => ['string', 'max:2048', 'distinct'],
         ], [

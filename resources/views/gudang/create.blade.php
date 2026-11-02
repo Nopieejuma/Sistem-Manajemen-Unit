@@ -28,7 +28,8 @@
             </div>
         @endif
 
-        <form action="{{ route('admin.gudang.store') }}" method="POST" enctype="multipart/form-data" class="space-y-6">
+        <form action="{{ route('admin.gudang.store') }}" method="POST" enctype="multipart/form-data" class="space-y-6" data-warehouse-photo-form data-existing-photos="0"
+            @if(config('filesystems.warehouse_direct_upload')) data-direct-upload-url="{{ route('admin.warehouse-photo-uploads.store') }}" @endif>
             @csrf
 
             <!-- Identitas Unit -->

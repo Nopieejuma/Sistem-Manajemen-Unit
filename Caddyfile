@@ -1,0 +1,33 @@
+{
+    admin off
+    auto_https off
+    persist_config off
+    frankenphp {
+        num_threads 4
+        max_threads 4
+    }
+}
+
+:{$PORT:8080} {
+    root * /app/public
+    encode zstd gzip
+    header -Server
+
+    @private path /.env /.env.* /.git/* /vendor/* /bootstrap/* /config/* /scripts/* /composer.* /artisan /Dockerfile* /Caddyfile /vercel.json /storage/private/* /storage/framework/* /storage/logs/*
+    respond @private 404
+
+    @otherPhp {
+        path *.php *.php/*
+        not path /index.php
+    }
+    respond @otherPhp 404
+
+    @build path /build/*
+    header @build Cache-Control "public, max-age=31536000, immutable"
+    @dynamic not path /build/* /images/* /favicon.ico /robots.txt
+    header @dynamic Cache-Control "private, no-store"
+
+    php_server {
+        try_files {path} index.php
+    }
+}

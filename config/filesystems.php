@@ -15,6 +15,8 @@ return [
 
     'default' => env('FILESYSTEM_DISK', 'local'),
 
+    'warehouse_direct_upload' => env('WAREHOUSE_DIRECT_UPLOAD', false),
+
     /*
     |--------------------------------------------------------------------------
     | Filesystem Disks
@@ -29,6 +31,29 @@ return [
     */
 
     'disks' => [
+
+        'warehouse_staging' => [
+            'driver' => 's3',
+            'key' => env('WAREHOUSE_S3_ACCESS_KEY_ID'),
+            'secret' => env('WAREHOUSE_S3_SECRET_ACCESS_KEY'),
+            'region' => env('WAREHOUSE_S3_REGION'),
+            'endpoint' => env('WAREHOUSE_S3_ENDPOINT'),
+            'bucket' => env('WAREHOUSE_S3_STAGING_BUCKET'),
+            'use_path_style_endpoint' => true,
+            'throw' => true,
+        ],
+
+        'warehouse_photos' => [
+            'driver' => 's3',
+            'key' => env('WAREHOUSE_S3_ACCESS_KEY_ID'),
+            'secret' => env('WAREHOUSE_S3_SECRET_ACCESS_KEY'),
+            'region' => env('WAREHOUSE_S3_REGION'),
+            'endpoint' => env('WAREHOUSE_S3_ENDPOINT'),
+            'bucket' => env('WAREHOUSE_S3_PUBLIC_BUCKET'),
+            'url' => env('WAREHOUSE_S3_PUBLIC_URL'),
+            'use_path_style_endpoint' => true,
+            'throw' => true,
+        ],
 
         'local' => [
             'driver' => 'local',
