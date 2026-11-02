@@ -4,11 +4,12 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="referrer" content="no-referrer">
-        <title>Cek Status Temu Janji — WAREHOUSE.BOOK</title>
+        <title>Cek Status Temu Janji — SARANA INDUSTRIAL POINT</title>
         @fonts
+        <link rel="icon" type="image/png" href="{{ asset('images/sarana-industrial-point.png') }}">
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
-    <body>
+    <body class="customer-site">
         <x-customer.navbar />
 
         <main class="min-h-screen bg-surface px-5 py-10 sm:px-8 sm:py-16">
@@ -41,13 +42,13 @@
                 </form>
 
                 @isset($notice)
-                    <p role="alert" class="rounded-xl border border-blue-200 bg-blue-50 p-5 text-sm leading-6 text-blue-800">{{ $notice }}</p>
+                    <p role="alert" class="rounded-xl border border-line bg-primary-light p-5 text-sm leading-6 text-primary-dark">{{ $notice }}</p>
                 @endisset
 
                 @if ($booking ?? null)
                     <section aria-labelledby="booking-result" class="rounded-2xl border border-line bg-white p-6 shadow-sm sm:p-8">
                         <h2 id="booking-result" class="text-lg font-bold text-ink">Ringkasan Temu Janji</h2>
-                        <p class="mt-4 inline-flex rounded-full bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700">{{ $statusLabel }}</p>
+                        <p class="mt-4 inline-flex rounded-full bg-primary-light px-3 py-2 text-sm font-semibold text-primary">{{ $statusLabel }}</p>
                         <p class="mt-3 text-sm leading-7 text-muted">{{ $statusMessage }}</p>
                         <dl class="mt-6 grid gap-5 border-t border-line pt-6 sm:grid-cols-2">
                             <div><dt class="text-sm text-muted">Kode Booking</dt><dd class="mt-1 break-all font-semibold text-ink">{{ $booking->kode_booking }}</dd></div>

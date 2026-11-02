@@ -80,6 +80,8 @@ class BookingConcurrencyTest extends TestCase
         $this->submitCustomerBooking($warehouse, $schedule, 'lifecycle-pending@example.test')
             ->assertCreated()->assertJsonPath('status', 'pending');
         $approvedBooking = TemuJanji::query()->where('email', 'lifecycle-pending@example.test')->firstOrFail();
+        $this->assertSame('Sparepart kendaraan', $approvedBooking->jenis_barang_disimpan);
+        $this->get(route('admin.temu-janji.show', $approvedBooking))->assertOk()->assertSee('Sparepart kendaraan');
 
         $this->post(route('admin.temu-janji.approve', $approvedBooking))->assertRedirect();
         $this->assertDatabaseHas('gudang', ['id' => $warehouse->id, 'status' => 'sedang di-keep']);
@@ -517,6 +519,7 @@ class BookingConcurrencyTest extends TestCase
             'nama_perusahaan' => 'Perusahaan Test',
             'nama_pic' => 'PIC Test',
             'email' => $email,
+            'jenis_barang_disimpan' => 'Sparepart kendaraan',
             'no_telepon' => '0800000000',
             'tanggal_kunjungan' => self::VisitDate,
         ]);
@@ -542,6 +545,7 @@ class BookingConcurrencyTest extends TestCase
                 'nama_perusahaan' => 'Perusahaan Paralel',
                 'nama_pic' => 'PIC Paralel',
                 'email' => $email,
+                'jenis_barang_disimpan' => 'Sparepart kendaraan',
                 'no_telepon' => '0800000000',
                 'tanggal_kunjungan' => self::VisitDate,
             ],

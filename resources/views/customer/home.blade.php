@@ -3,28 +3,29 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="description" content="Temukan gudang yang tepat untuk bisnis Anda bersama WAREHOUSE.BOOK.">
-        <title>WAREHOUSE.BOOK — Warehouse Booking</title>
+        <meta name="description" content="Temukan gudang yang tepat untuk bisnis Anda bersama SARANA INDUSTRIAL POINT.">
+        <title>SARANA INDUSTRIAL POINT — Booking Gudang</title>
         @fonts
+        <link rel="icon" type="image/png" href="{{ asset('images/sarana-industrial-point.png') }}">
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
-    <body>
+    <body class="customer-site">
         <x-customer.navbar />
 
         <main>
-            <section id="beranda" class="relative isolate overflow-hidden" style="background-color: #bfdbfe;">
+            <section id="beranda" class="relative isolate overflow-hidden" style="background-color: #191d23;">
                 <div class="absolute -right-28 top-8 -z-10 h-96 w-96 rounded-full bg-primary/8 blur-3xl"></div>
                 <div class="mx-auto grid min-h-[600px] max-w-7xl items-center gap-12 px-5 py-18 sm:px-8 lg:grid-cols-[1.04fr_.96fr] lg:px-10 lg:py-24">
                     <div>
-                        <p class="inline-flex rounded-full border border-primary/15 bg-primary/8 px-3.5 py-2 text-xs font-bold tracking-[0.12em]" style="color: #000000;"> KAWASAN INDUSTRI TERPADU</p>
-                        <h1 class="mt-6 max-w-2xl text-4xl font-bold leading-[1.12] tracking-[-0.045em] text-ink sm:text-5xl lg:text-6xl">Temukan Gudang yang <span class="text-primary">Tepat</span> untuk Bisnis Anda</h1>
-                        <p class="mt-6 max-w-xl text-base leading-7 text-muted sm:text-lg">Lihat informasi gudang, pilih gudang yang Anda minati, dan jadwalkan kunjungan langsung dengan admin.</p>
+                        <p class="inline-flex rounded-full border border-primary/15 bg-primary/8 px-3.5 py-2 text-xs font-bold tracking-[0.12em]" style="color: #d7ba75;"> KAWASAN INDUSTRI TERPADU</p>
+                        <h1 class="mt-6 max-w-2xl text-4xl font-bold leading-[1.12] tracking-[-0.045em] text-white sm:text-5xl lg:text-6xl">Temukan Gudang yang <span class="text-accent">Tepat</span> untuk Bisnis Anda</h1>
+                        <p class="mt-6 max-w-xl text-base leading-7 text-stone-200 sm:text-lg">Lihat informasi gudang, pilih gudang yang Anda minati, dan jadwalkan kunjungan langsung dengan admin.</p>
                         <a href="{{ route('customer.gudang.index') }}" class="mt-9 inline-flex rounded-xl bg-primary px-6 py-3.5 text-sm font-bold text-white transition hover:bg-primary-dark">Lihat Daftar Gudang</a>
                     </div>
                     <div class="relative mx-auto w-full max-w-xl">
                         <div class="absolute -inset-4 rounded-[2rem] bg-primary/10 blur-2xl"></div>
                         @if ($heroPhotoUrl = $warehouses->pluck('image')->filter()->first())
-                            <img src="{{ $heroPhotoUrl }}" alt="Foto gudang tersedia" class="relative h-[340px] w-full rounded-[1.75rem] object-cover shadow-2xl sm:h-[410px]">
+                            <img src="{{ $heroPhotoUrl }}" alt="Foto gudang tersedia" class="relative h-[340px] w-full rounded-[1.75rem] bg-surface text-muted object-cover shadow-2xl sm:h-[410px]">
                         @else
                             <div class="relative flex h-[340px] w-full items-center justify-center rounded-[1.75rem] bg-surface text-sm text-muted shadow-2xl sm:h-[410px]">Foto belum tersedia</div>
                         @endif

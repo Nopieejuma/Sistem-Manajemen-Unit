@@ -51,6 +51,7 @@ class CustomerTemuJanjiTest extends TestCase
             $table->time('jam_mulai');
             $table->time('jam_selesai');
             $table->text('catatan')->nullable();
+            $table->text('jenis_barang_disimpan')->nullable();
             $table->string('status', 30)->default('pending');
             $table->timestampsTz();
         });
@@ -249,6 +250,7 @@ class CustomerTemuJanjiTest extends TestCase
             'no_telepon' => '081234567890',
             'tanggal_kunjungan' => $payload['tanggal_kunjungan'],
             'catatan' => 'Periksa kapasitas listrik.',
+            'jenis_barang_disimpan' => 'Sparepart kendaraan',
         ]);
         $this->assertDatabaseHas('gudang', ['id' => $warehouse->id, 'status' => 'tersedia']);
 
@@ -297,7 +299,7 @@ class CustomerTemuJanjiTest extends TestCase
 
         $this->postJson(route('customer.temu-janji.store', ['group' => $warehouse->groupIdentifier()]), [])
             ->assertUnprocessable()->assertJsonValidationErrors([
-                'gudang_id', 'jadwal_id', 'nama_perusahaan', 'nama_pic', 'email', 'no_telepon', 'tanggal_kunjungan',
+                'gudang_id', 'jadwal_id', 'nama_perusahaan', 'nama_pic', 'email', 'no_telepon', 'tanggal_kunjungan', 'jenis_barang_disimpan',
             ])->assertJsonMissingPath('kode_booking');
         $this->assertDatabaseCount('temu_janji', 0);
     }
@@ -483,6 +485,41 @@ class CustomerTemuJanjiTest extends TestCase
             ->assertOk()->assertExactJson(['slots' => []]);
     }
 
+    #[TestWith([null])]
+    #[TestWith(['   '])]
+    #[TestWith([['invalid']])]
+    public function test_goods_description_is_required_and_must_be_text(mixed $goods): void
+    {
+        $warehouse = $this->warehouse();
+        $payload = $this->payload($warehouse);
+        $payload['jenis_barang_disimpan'] = $goods;
+        $this->postJson(route('customer.temu-janji.store', ['group' => $warehouse->groupIdentifier()]), $payload)
+            ->assertUnprocessable()->assertJsonValidationErrors('jenis_barang_disimpan');
+        $this->assertDatabaseCount('temu_janji', 0);
+    }
+
+    public function test_goods_description_length_is_limited(): void
+    {
+        $warehouse = $this->warehouse();
+        $payload = $this->payload($warehouse);
+        $payload['jenis_barang_disimpan'] = str_repeat('a', 2001);
+        $this->postJson(route('customer.temu-janji.store', ['group' => $warehouse->groupIdentifier()]), $payload)
+            ->assertUnprocessable()->assertJsonValidationErrors('jenis_barang_disimpan');
+        $this->assertDatabaseCount('temu_janji', 0);
+    }
+
+    public function test_success_response_provides_a_guest_receipt_for_the_persisted_booking(): void
+    {
+        $warehouse = $this->warehouse();
+        $payload = $this->payload($warehouse);
+        $response = $this->postJson(route('customer.temu-janji.store', ['group' => $warehouse->groupIdentifier()]), $payload)->assertCreated();
+        $this->assertDatabaseHas('temu_janji', [
+            'kode_booking' => $response->json('kode_booking'),
+            'jenis_barang_disimpan' => $payload['jenis_barang_disimpan'], 'status' => 'pending',
+        ]);
+        $this->get($response->json('bukti_booking_url'))->assertOk()->assertHeader('Content-Type', 'application/pdf');
+    }
+
     /** @param array<string, string|bool> $attributes */
     private function schedule(array $attributes = []): string
     {
@@ -509,6 +546,7 @@ class CustomerTemuJanjiTest extends TestCase
             'no_telepon' => '081234567890',
             'tanggal_kunjungan' => today()->addDay()->toDateString(),
             'catatan' => 'Periksa kapasitas listrik.',
+            'jenis_barang_disimpan' => 'Sparepart kendaraan',
         ];
     }
 

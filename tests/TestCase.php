@@ -79,6 +79,7 @@ abstract class TestCase extends BaseTestCase
                 $table->time('jam_mulai');
                 $table->time('jam_selesai');
                 $table->text('catatan')->nullable();
+                $table->text('jenis_barang_disimpan')->nullable();
                 $table->string('status', 30)->default('pending');
                 $table->timestampsTz();
             });

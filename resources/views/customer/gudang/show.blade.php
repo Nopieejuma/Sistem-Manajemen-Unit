@@ -3,12 +3,13 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="description" content="Detail gudang {{ $selectedUnit->unit_code }} di WAREHOUSE.BOOK.">
-        <title>Gudang {{ $selectedUnit->unit_code }} — WAREHOUSE.BOOK</title>
+        <meta name="description" content="Detail gudang {{ $selectedUnit->unit_code }} di SARANA INDUSTRIAL POINT.">
+        <title>Gudang {{ $selectedUnit->unit_code }} — SARANA INDUSTRIAL POINT</title>
         @fonts
+        <link rel="icon" type="image/png" href="{{ asset('images/sarana-industrial-point.png') }}">
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
-    <body>
+    <body class="customer-site">
         <x-customer.navbar />
 
         <main class="min-h-screen bg-surface py-8 sm:py-10">

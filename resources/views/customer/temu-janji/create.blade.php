@@ -3,18 +3,19 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="description" content="Jadwalkan kunjungan ke Gudang {{ $warehouse->unit_code }} bersama admin WAREHOUSE.BOOK.">
-        <title>Buat Temu Janji — WAREHOUSE.BOOK</title>
+        <meta name="description" content="Jadwalkan kunjungan ke Gudang {{ $warehouse->unit_code }} bersama admin SARANA INDUSTRIAL POINT.">
+        <title>Buat Temu Janji — SARANA INDUSTRIAL POINT</title>
         @fonts
+        <link rel="icon" type="image/png" href="{{ asset('images/sarana-industrial-point.png') }}">
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
-    <body>
+    <body class="customer-site">
         <x-customer.navbar />
 
-        <main class="min-h-screen bg-[#f8f9fa] px-5 py-8 sm:px-8 sm:py-10">
+        <main class="min-h-screen bg-surface px-5 py-8 sm:px-8 sm:py-10">
             <div class="mx-auto flex max-w-[880px] flex-col gap-6 pb-10">
                 <nav aria-label="Breadcrumb" class="flex flex-wrap items-center gap-2 text-sm text-gray-400">
-                    <a href="{{ $detailUrl }}" class="transition hover:text-blue-700">Detail Gudang</a>
+                    <a href="{{ $detailUrl }}" class="transition hover:text-primary">Detail Gudang</a>
                     <span aria-hidden="true">/</span>
                     <span aria-current="page" class="text-gray-600">Buat Temu Janji</span>
                 </nav>
@@ -24,11 +25,11 @@
                     <p class="mt-1 text-base text-gray-500">Isi data di bawah untuk menjadwalkan kunjungan.</p>
                 </header>
 
-                <section aria-label="Ringkasan gudang terpilih" data-unit-id="{{ $warehouse->id }}" class="flex flex-wrap items-center gap-4 rounded-2xl border border-blue-100 bg-blue-50 p-5">
+                <section aria-label="Ringkasan gudang terpilih" data-unit-id="{{ $warehouse->id }}" class="flex flex-wrap items-center gap-4 rounded-2xl border border-line bg-primary-light p-5">
                     @if ($warehouse->firstPhotoUrl())
                         <img src="{{ $warehouse->firstPhotoUrl() }}" alt="Gudang {{ $warehouse->unit_code }}" referrerpolicy="no-referrer" class="h-[68px] w-[84px] shrink-0 rounded-xl object-cover">
                     @else
-                        <div class="flex h-[68px] w-[84px] shrink-0 items-center justify-center rounded-xl bg-blue-100/60 p-2 text-center text-xs text-slate-500">Foto belum tersedia</div>
+                        <div class="flex h-[68px] w-[84px] shrink-0 items-center justify-center rounded-xl bg-primary-light/60 p-2 text-center text-xs text-slate-500">Foto belum tersedia</div>
                     @endif
                     <div class="min-w-0 flex-1 basis-40">
                         <div class="flex flex-wrap items-center gap-2">
@@ -45,7 +46,7 @@
                             @endif
                         </p>
                     </div>
-                    <span class="shrink-0 rounded-lg bg-blue-100 px-3 py-2 text-xs font-bold text-blue-700">Menunggu Pengajuan</span>
+                    <span class="shrink-0 rounded-lg bg-primary-light px-3 py-2 text-xs font-bold text-primary">Menunggu Pengajuan</span>
                 </section>
 
                 <p class="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-semibold leading-6 text-amber-700">Permohonan memerlukan persetujuan admin. Gudang baru di-keep setelah permohonan disetujui.</p>
@@ -58,19 +59,19 @@
                         <div class="grid grid-cols-1 gap-x-5 gap-y-5 p-6 sm:grid-cols-2">
                             <div>
                                 <label for="company-name" class="mb-2 block text-sm font-semibold text-gray-700">Nama Perusahaan <span class="text-red-500">*</span></label>
-                                <input id="company-name" name="nama_perusahaan" type="text" autocomplete="organization" required maxlength="150" placeholder="PT / CV / UD ..." class="h-11 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm outline-none placeholder:text-gray-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-100">
+                                <input id="company-name" name="nama_perusahaan" type="text" autocomplete="organization" required maxlength="150" placeholder="PT / CV / UD ..." class="h-11 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm outline-none placeholder:text-gray-400 focus:border-primary focus:ring-2 focus:ring-primary/20">
                             </div>
                             <div>
                                 <label for="contact-name" class="mb-2 block text-sm font-semibold text-gray-700">Nama PIC <span class="text-red-500">*</span></label>
-                                <input id="contact-name" name="nama_pic" type="text" autocomplete="name" required maxlength="100" placeholder="Nama penanggung jawab" class="h-11 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm outline-none placeholder:text-gray-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-100">
+                                <input id="contact-name" name="nama_pic" type="text" autocomplete="name" required maxlength="100" placeholder="Nama penanggung jawab" class="h-11 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm outline-none placeholder:text-gray-400 focus:border-primary focus:ring-2 focus:ring-primary/20">
                             </div>
                             <div>
                                 <label for="email" class="mb-2 block text-sm font-semibold text-gray-700">Email <span class="text-red-500">*</span></label>
-                                <input id="email" name="email" type="email" autocomplete="email" required maxlength="150" placeholder="email@perusahaan.com" class="h-11 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm outline-none placeholder:text-gray-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-100">
+                                <input id="email" name="email" type="email" autocomplete="email" required maxlength="150" placeholder="email@perusahaan.com" class="h-11 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm outline-none placeholder:text-gray-400 focus:border-primary focus:ring-2 focus:ring-primary/20">
                             </div>
                             <div>
                                 <label for="phone" class="mb-2 block text-sm font-semibold text-gray-700">Nomor Telepon <span class="text-red-500">*</span></label>
-                                <input id="phone" name="no_telepon" type="tel" autocomplete="tel" required maxlength="30" placeholder="08xx-xxxx-xxxx" class="h-11 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm outline-none placeholder:text-gray-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-100">
+                                <input id="phone" name="no_telepon" type="tel" autocomplete="tel" required maxlength="30" placeholder="08xx-xxxx-xxxx" class="h-11 w-full rounded-xl border border-gray-200 bg-white px-4 text-sm outline-none placeholder:text-gray-400 focus:border-primary focus:ring-2 focus:ring-primary/20">
                             </div>
                         </div>
                     </section>
@@ -80,7 +81,7 @@
                         <div class="flex flex-col gap-6 p-6">
                             <div>
                                 <label for="visit-date" class="mb-2 block text-sm font-semibold text-gray-700">Tanggal Kunjungan <span class="text-red-500">*</span></label>
-                                <input id="visit-date" name="tanggal_kunjungan" type="date" min="{{ $today }}" value="{{ $today }}" required class="h-11 w-full min-w-0 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-700 outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100">
+                                <input id="visit-date" name="tanggal_kunjungan" type="date" min="{{ $today }}" value="{{ $today }}" required class="h-11 w-full min-w-0 rounded-xl border border-gray-200 bg-white px-4 text-sm text-gray-700 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20">
                             </div>
                             <fieldset>
                                 <legend class="mb-3 text-sm font-semibold text-gray-700">Pilih Slot Waktu <span class="text-red-500">*</span></legend>
@@ -88,7 +89,7 @@
                                     @forelse ($timeSlots as $timeSlot)
                                         <label class="relative">
                                             <input data-unavailable-label="{{ $timeSlot['is_full'] ? 'Penuh' : 'Sudah lewat' }}" type="radio" name="jadwal_id" value="{{ $timeSlot['id'] }}" required @disabled($timeSlot['is_full'] || ($timeSlot['is_past'] ?? false)) class="peer sr-only">
-                                            <span class="flex cursor-pointer flex-col gap-1 rounded-xl border border-gray-200 bg-white px-3 py-4 text-center text-sm text-gray-700 transition peer-checked:border-blue-700 peer-checked:bg-blue-700 peer-checked:text-white peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-blue-600 peer-disabled:cursor-not-allowed peer-disabled:border-gray-100 peer-disabled:bg-gray-100 peer-disabled:text-gray-400">
+                                            <span class="flex cursor-pointer flex-col gap-1 rounded-xl border border-gray-200 bg-white px-3 py-4 text-center text-sm text-gray-700 transition peer-checked:border-primary peer-checked:bg-primary peer-checked:text-white peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-primary peer-disabled:cursor-not-allowed peer-disabled:border-gray-100 peer-disabled:bg-gray-100 peer-disabled:text-gray-400">
                                                 <span class="font-semibold">{{ $timeSlot['start'] }} – {{ $timeSlot['end'] }}</span>
                                                 <span data-slot-status class="text-xs">{{ $timeSlot['is_full'] ? 'Penuh' : (($timeSlot['is_past'] ?? false) ? 'Sudah lewat' : 'Tersedia') }}</span>
                                             </span>
@@ -98,7 +99,7 @@
                                     @endforelse
                                 </div>
                                 <div class="mt-4 flex flex-wrap items-center gap-5 text-xs text-gray-500" aria-label="Keterangan slot waktu">
-                                    <span class="inline-flex items-center gap-2"><span aria-hidden="true" class="size-3 rounded-sm bg-blue-700"></span>Dipilih</span>
+                                    <span class="inline-flex items-center gap-2"><span aria-hidden="true" class="size-3 rounded-sm bg-primary"></span>Dipilih</span>
                                     <span class="inline-flex items-center gap-2"><span aria-hidden="true" class="size-3 rounded-sm border border-gray-200 bg-gray-100"></span>Penuh</span>
                                     <span class="inline-flex items-center gap-2"><span aria-hidden="true" class="size-3 rounded-sm border border-gray-300 bg-white"></span>Tersedia</span>
                                 </div>
@@ -106,7 +107,7 @@
                                 <template id="appointment-slot-template">
                                     <label class="relative">
                                         <input type="radio" name="jadwal_id" required class="peer sr-only">
-                                        <span class="flex cursor-pointer flex-col gap-1 rounded-xl border border-gray-200 bg-white px-3 py-4 text-center text-sm text-gray-700 transition peer-checked:border-blue-700 peer-checked:bg-blue-700 peer-checked:text-white peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-blue-600 peer-disabled:cursor-not-allowed peer-disabled:border-gray-100 peer-disabled:bg-gray-100 peer-disabled:text-gray-400">
+                                        <span class="flex cursor-pointer flex-col gap-1 rounded-xl border border-gray-200 bg-white px-3 py-4 text-center text-sm text-gray-700 transition peer-checked:border-primary peer-checked:bg-primary peer-checked:text-white peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-primary peer-disabled:cursor-not-allowed peer-disabled:border-gray-100 peer-disabled:bg-gray-100 peer-disabled:text-gray-400">
                                             <span class="font-semibold"></span>
                                             <span data-slot-status class="text-xs"></span>
                                         </span>
@@ -117,29 +118,42 @@
                     </section>
 
                     <section class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+                        <label for="stored-goods" class="block border-b border-gray-100 px-6 py-6 text-base font-bold text-gray-900">Barang yang akan disimpan di gudang <span class="text-red-500">*</span></label>
+                        <div class="p-6">
+                            <textarea id="stored-goods" name="jenis_barang_disimpan" rows="4" required maxlength="2000" placeholder="Contoh: Sparepart kendaraan, bahan baku produksi, atau barang elektronik" class="block min-h-28 w-full resize-y rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm outline-none placeholder:text-gray-400 focus:border-primary focus:ring-2 focus:ring-primary/20"></textarea>
+                        </div>
+                    </section>
+
+                    <section class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
                         <label for="notes" class="block border-b border-gray-100 px-6 py-6 text-base font-bold text-gray-900">Catatan / Kebutuhan Tambahan <span class="text-sm font-normal text-gray-500">(opsional)</span></label>
                         <div class="p-6">
-                            <textarea id="notes" name="catatan" rows="4" maxlength="2000" placeholder="Contoh: ingin melihat kondisi lantai, kapasitas listrik, dll." class="block min-h-28 w-full resize-y rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm outline-none placeholder:text-gray-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-100"></textarea>
+                            <textarea id="notes" name="catatan" rows="4" maxlength="2000" placeholder="Contoh: ingin melihat kondisi lantai, kapasitas listrik, dll." class="block min-h-28 w-full resize-y rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm outline-none placeholder:text-gray-400 focus:border-primary focus:ring-2 focus:ring-primary/20"></textarea>
                         </div>
                     </section>
 
                     <p id="booking-unavailable" class="text-sm leading-6 text-gray-500">Permohonan akan diperiksa admin. Pengajuan belum berarti gudang di-keep.</p>
                     <p id="booking-error" role="alert" tabindex="-1" hidden class="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700"></p>
                     <div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-                        <a href="{{ $detailUrl }}" class="rounded-xl border border-gray-200 bg-white px-6 py-3 text-center text-sm font-semibold text-gray-600 transition hover:bg-gray-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">Batal</a>
-                        <button type="submit" disabled aria-describedby="booking-unavailable" id="confirm-appointment" class="rounded-xl bg-blue-700 px-6 py-3 text-sm font-semibold text-white transition enabled:cursor-pointer enabled:hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60">Konfirmasi Temu Janji</button>
+                        <a href="{{ $detailUrl }}" class="rounded-xl border border-gray-200 bg-white px-6 py-3 text-center text-sm font-semibold text-gray-600 transition hover:bg-gray-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">Batal</a>
+                        <button type="submit" disabled aria-describedby="booking-unavailable" id="confirm-appointment" class="rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-white transition enabled:cursor-pointer enabled:hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-60">Konfirmasi Temu Janji</button>
                     </div>
                 </form>
             </div>
         </main>
 
         <dialog id="appointment-success" aria-labelledby="success-title" aria-describedby="success-description" class="fixed inset-0 m-auto w-[calc(100%-2.5rem)] max-w-lg rounded-2xl border border-gray-200 bg-white p-6 text-gray-900 shadow-xl backdrop:bg-slate-900/50 sm:p-8">
-            <span class="inline-flex rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">Menunggu Persetujuan</span>
+            <span class="inline-flex rounded-full bg-primary-light px-3 py-1 text-xs font-semibold text-primary">Menunggu Persetujuan</span>
             <h2 id="success-title" class="mt-4 text-xl font-bold">Permohonan Temu Janji Berhasil Dikirim</h2>
             <p id="success-description" class="mt-3 text-sm leading-6 text-gray-600">Permohonan temu janji Anda telah dikirim dan akan diperiksa terlebih dahulu oleh admin. Silakan menunggu konfirmasi dari admin.</p>
-            <p class="mt-3 text-sm font-semibold">Kode Booking: <span id="booking-code"></span></p>
+            <p class="mt-3 text-sm font-semibold">Kode Booking: <span id="booking-code" class="break-all font-mono select-all"></span></p>
+            <div class="mt-5 flex flex-col gap-3 sm:flex-row">
+                <button type="button" id="copy-booking-code" class="rounded-xl border border-primary px-4 py-3 text-sm font-semibold text-primary hover:bg-primary-light">Salin Kode Booking</button>
+                <a id="download-booking-receipt" hidden download referrerpolicy="no-referrer" class="rounded-xl bg-primary px-4 py-3 text-center text-sm font-semibold text-white hover:bg-primary-dark">Unduh Bukti Booking</a>
+            </div>
+            <p id="booking-copy-status" role="status" aria-live="polite" class="mt-3 text-sm text-gray-600"></p>
+            <p class="mt-2 text-xs leading-5 text-gray-600">Tautan unduhan berlaku 24 jam. Bukti pengajuan bukan persetujuan Admin; status awal tetap pending.</p>
             <form method="dialog" class="mt-6 flex justify-end">
-                <button autofocus class="rounded-xl bg-blue-700 px-6 py-3 text-sm font-semibold text-white hover:bg-blue-800">Mengerti</button>
+                <button autofocus class="rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-white hover:bg-primary-dark">Mengerti</button>
             </form>
         </dialog>
 
@@ -260,6 +274,11 @@
                     }
                     submitted = true;
                     document.getElementById('booking-code').textContent = result.kode_booking;
+                    const receiptLink = document.getElementById('download-booking-receipt');
+                    if (result.bukti_booking_url) {
+                        receiptLink.href = result.bukti_booking_url;
+                        receiptLink.hidden = false;
+                    }
                     successDialog.showModal();
                 } catch (error) {
                     errorMessage.textContent = error instanceof TypeError

@@ -39,7 +39,7 @@ class CustomerHomeTest extends TestCase
 
         $response->assertOk();
         $response->assertViewIs('customer.home');
-        $response->assertSee('WAREHOUSE.BOOK');
+        $response->assertSee('SARANA INDUSTRIAL POINT');
         $response->assertSee('Gudang Tersedia');
         $response->assertSee('Gudang A5');
     }

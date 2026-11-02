@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\TemuJanji;
 use App\Models\User;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use PHPUnit\Framework\Attributes\TestWith;
@@ -49,7 +50,7 @@ class TemuJanjiAdminTest extends TestCase
 
     public function test_admin_can_view_booking_details_and_customer_capacity_count(): void
     {
-        $booking = $this->createBooking(['status' => 'pending']);
+        $booking = $this->createBooking(['status' => 'pending', 'jenis_barang_disimpan' => 'Sparepart kendaraan']);
         DB::table('jadwal')->insert([
             'id' => '00000000-0000-4000-8000-000000000010',
             'jam_mulai' => '09:00:00',
@@ -73,7 +74,8 @@ class TemuJanjiAdminTest extends TestCase
             ->assertSee('2026')
             ->assertSee('09:00–09:45')
             ->assertSee('Mohon siapkan akses loading dock.')
-            ->assertSee('3 / 5 booking');
+            ->assertSee('3 / 5 booking')
+            ->assertSee('Sparepart kendaraan');
     }
 
     public function test_guest_cannot_access_booking_list_detail_or_status_actions(): void
@@ -84,6 +86,25 @@ class TemuJanjiAdminTest extends TestCase
         $this->get(route('admin.temu-janji.index'))->assertRedirect(route('admin.login', absolute: false));
         $this->get(route('admin.temu-janji.show', $booking))->assertRedirect(route('admin.login', absolute: false));
         $this->post(route('admin.temu-janji.approve', $booking))->assertRedirect(route('admin.login', absolute: false));
+    }
+
+    public function test_pagination_preserves_booking_filters(): void
+    {
+        for ($index = 1; $index <= 16; $index++) {
+            $this->createBooking(['kode_booking' => 'BK-PAGE-'.$index, 'status' => 'pending']);
+        }
+
+        $response = $this->get(route('admin.temu-janji.index', ['q' => 'BK-PAGE-', 'status' => 'pending']))
+            ->assertOk()->assertSee('Navigasi halaman')->assertSee('Berikutnya');
+        $document = new \DOMDocument;
+        @$document->loadHTML($response->getContent());
+        $nextUrl = (new \DOMXPath($document))->query('//a[@rel="next"]')->item(0)->getAttribute('href');
+        parse_str(parse_url($nextUrl, PHP_URL_QUERY), $query);
+
+        $this->assertSame('BK-PAGE-', $query['q']);
+        $this->assertSame('pending', $query['status']);
+        $this->assertSame('2', $query['page']);
+        $this->get($nextUrl)->assertOk()->assertViewHas('bookings', fn (LengthAwarePaginator $bookings): bool => $bookings->currentPage() === 2 && $bookings->count() === 1);
     }
 
     #[TestWith(['pending', 'approve', 'approved'])]

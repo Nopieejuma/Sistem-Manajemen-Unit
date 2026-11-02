@@ -10,6 +10,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -120,6 +121,7 @@ class TemuJanjiController extends Controller
             'no_telepon' => ['required', 'string', 'max:30'],
             'tanggal_kunjungan' => ['required', 'date_format:Y-m-d', 'after_or_equal:'.now(self::BusinessTimezone)->toDateString()],
             'catatan' => ['nullable', 'string', 'max:2000'],
+            'jenis_barang_disimpan' => ['required', 'string', 'max:2000'],
         ], [
             'required' => ':attribute wajib diisi.',
             'uuid' => 'Pilihan :attribute tidak valid.',
@@ -134,6 +136,7 @@ class TemuJanjiController extends Controller
             'nama_pic' => 'Nama PIC',
             'no_telepon' => 'Nomor telepon',
             'tanggal_kunjungan' => 'Tanggal kunjungan',
+            'jenis_barang_disimpan' => 'Barang yang akan disimpan di gudang',
         ]);
 
         try {
@@ -187,6 +190,7 @@ class TemuJanjiController extends Controller
                     'jam_mulai' => $schedule->jam_mulai,
                     'jam_selesai' => $schedule->jam_selesai,
                     'catatan' => $data['catatan'] ?? null,
+                    'jenis_barang_disimpan' => $data['jenis_barang_disimpan'],
                     'status' => 'pending',
                     'created_at' => $timestamp,
                     'updated_at' => $timestamp,
@@ -202,6 +206,12 @@ class TemuJanjiController extends Controller
             ], 503);
         }
 
-        return response()->json(['kode_booking' => $bookingCode, 'status' => 'pending'], 201);
+        return response()->json([
+            'kode_booking' => $bookingCode,
+            'status' => 'pending',
+            'bukti_booking_url' => URL::temporarySignedRoute(
+                'customer.booking.receipt', now()->addDay(), ['kodeBooking' => $bookingCode],
+            ),
+        ], 201)->header('Cache-Control', 'no-store, private');
     }
 }
