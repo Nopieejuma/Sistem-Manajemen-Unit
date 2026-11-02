@@ -10,5 +10,10 @@
       "src": "/(.*)",
       "dest": "/api/index.php"
     }
-  ]
+  ],
+  "env": {
+    "APP_KEY": "base64:c29tZXJhbmRvbWtleWlucGFzc3dvcmQxMjM0NTY3OA==",
+    "APP_ENV": "production",
+    "APP_DEBUG": "true"
+  }
 }
