@@ -59,10 +59,13 @@
                 <h2 class="mb-1 text-sm font-bold text-ink">Tindakan Admin</h2>
                 <p class="mb-4 text-xs text-muted">Perubahan status disimpan secara aman.</p>
                 <div class="space-y-2">
-                    @foreach (['approve' => ['Setujui Booking', 'bg-emerald-600 hover:bg-emerald-700'], 'reject' => ['Tolak Booking', 'bg-red-600 hover:bg-red-700'], 'complete' => ['Tandai Selesai', 'bg-primary hover:bg-primary-dark'], 'cancel' => ['Batalkan Booking', 'bg-ink hover:bg-ink']] as $action => [$label, $classes])
+                    @foreach (['approve' => ['Setujui Booking', 'bg-emerald-600 hover:bg-emerald-700'], 'reject' => ['Tolak Booking', 'bg-red-600 hover:bg-red-700'], 'complete' => ['Tandai Selesai', 'bg-primary hover:bg-primary-dark'], 'cancel' => ['Batalkan Booking', 'bg-ink hover:bg-ink'], 'revoke' => ['Batalkan Persetujuan', 'bg-ink hover:bg-ink'], 'destroy' => ['Hapus', 'bg-red-600 hover:bg-red-700']] as $action => [$label, $classes])
                         @if (in_array($action, $allowedActions, true))
-                            <form method="POST" action="{{ route('admin.temu-janji.'.$action, $booking) }}" onsubmit="return confirm('{{ $label }}?')">
+                            <form method="POST" action="{{ route('admin.temu-janji.'.$action, $booking) }}" onsubmit="return confirm('{{ in_array($action, ['cancel', 'destroy'], true) ? 'Hapus booking ini secara permanen? Data tidak dapat dikembalikan.' : $label.'?' }}')">
                                 @csrf
+                                @if ($action === 'destroy')
+                                    @method('DELETE')
+                                @endif
                                 <button type="submit" class="w-full rounded-xl px-4 py-2.5 text-xs font-semibold text-white transition {{ $classes }}">{{ $label }}</button>
                             </form>
                         @endif

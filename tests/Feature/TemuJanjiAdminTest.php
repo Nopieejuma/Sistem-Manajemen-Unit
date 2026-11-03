@@ -109,8 +109,7 @@ class TemuJanjiAdminTest extends TestCase
 
     #[TestWith(['pending', 'approve', 'approved'])]
     #[TestWith(['pending', 'reject', 'rejected'])]
-    #[TestWith(['pending', 'cancel', 'canceled'])]
-    #[TestWith(['approved', 'cancel', 'canceled'])]
+    #[TestWith(['approved', 'revoke', 'canceled'])]
     #[TestWith(['approved', 'complete', 'completed'])]
     public function test_admin_can_apply_allowed_status_transitions(string $initialStatus, string $action, string $expectedStatus): void
     {
@@ -138,16 +137,16 @@ class TemuJanjiAdminTest extends TestCase
         $this->post(route('admin.temu-janji.approve', $secondBooking))->assertRedirect();
         $this->assertDatabaseHas('gudang', ['id' => $firstBooking->gudang_id, 'status' => 'sedang di-keep']);
 
-        $this->post(route('admin.temu-janji.cancel', $firstBooking))->assertRedirect();
+        $this->post(route('admin.temu-janji.revoke', $firstBooking))->assertRedirect();
         $this->assertDatabaseHas('gudang', ['id' => $firstBooking->gudang_id, 'status' => 'sedang di-keep']);
 
         $this->post(route('admin.temu-janji.complete', $secondBooking))->assertRedirect();
         $this->assertDatabaseHas('gudang', ['id' => $firstBooking->gudang_id, 'status' => 'tersedia']);
     }
 
-    #[TestWith(['tidak tersedia', 'cancel'])]
-    #[TestWith(['digunakan', 'cancel'])]
     #[TestWith(['tidak tersedia', 'complete'])]
+    #[TestWith(['tidak tersedia', 'revoke'])]
+    #[TestWith(['digunakan', 'revoke'])]
     #[TestWith(['digunakan', 'complete'])]
     public function test_releasing_booking_does_not_overwrite_operational_warehouse_status(string $warehouseStatus, string $action): void
     {
@@ -176,8 +175,13 @@ class TemuJanjiAdminTest extends TestCase
     }
 
     #[TestWith(['pending', 'complete'])]
+    #[TestWith(['pending', 'revoke'])]
+    #[TestWith(['rejected', 'revoke'])]
+    #[TestWith(['completed', 'revoke'])]
+    #[TestWith(['canceled', 'revoke'])]
     #[TestWith(['approved', 'approve'])]
     #[TestWith(['approved', 'reject'])]
+    #[TestWith(['approved', 'cancel'])]
     #[TestWith(['rejected', 'approve'])]
     #[TestWith(['rejected', 'cancel'])]
     #[TestWith(['rejected', 'complete'])]
@@ -205,18 +209,19 @@ class TemuJanjiAdminTest extends TestCase
     {
         $booking = $this->createBooking(['status' => 'pending']);
 
-        $this->from(route('admin.temu-janji.show', $booking))->post(route('admin.temu-janji.cancel', $booking))->assertRedirect();
+        $this->from(route('admin.temu-janji.show', $booking))->post(route('admin.temu-janji.reject', $booking))->assertRedirect();
         $this->from(route('admin.temu-janji.show', $booking))
             ->post(route('admin.temu-janji.approve', $booking))
             ->assertRedirect(route('admin.temu-janji.show', $booking))
             ->assertSessionHasErrors('status');
 
-        $this->assertDatabaseHas('temu_janji', ['id' => $booking->id, 'status' => 'canceled']);
+        $this->assertDatabaseHas('temu_janji', ['id' => $booking->id, 'status' => 'rejected']);
     }
 
     public function test_canceling_a_booking_releases_its_capacity(): void
     {
-        $booking = $this->createBooking(['status' => 'approved']);
+        $this->travelTo(new \DateTimeImmutable('2026-11-01 08:00:00', new \DateTimeZone('Asia/Jakarta')));
+        $booking = $this->createBooking(['status' => 'pending']);
         DB::table('jadwal')->insert([
             'id' => '00000000-0000-4000-8000-000000000010',
             'jam_mulai' => '09:00:00',
@@ -227,14 +232,118 @@ class TemuJanjiAdminTest extends TestCase
 
         $this->get(route('admin.temu-janji.show', $booking))->assertSee('1 / 1 booking');
 
-        $this->post(route('admin.temu-janji.cancel', $booking))->assertRedirect();
+        $this->post(route('admin.temu-janji.cancel', $booking))->assertRedirect(route('admin.temu-janji.index'));
 
-        $this->get(route('admin.temu-janji.show', $booking))->assertSee('0 / 1 booking');
+        $this->assertDatabaseMissing('temu_janji', ['id' => $booking->id]);
+        $this->getJson(route('customer.temu-janji.availability', ['tanggal_kunjungan' => '2026-11-10']))
+            ->assertOk()->assertJsonPath('slots.0.is_full', false);
+        $this->get(route('admin.temu-janji.show', $booking))->assertNotFound();
     }
 
     public function test_booking_list_rejects_unknown_status_filter(): void
     {
         $this->get(route('admin.temu-janji.index', ['status' => 'keep']))->assertSessionHasErrors('status');
+    }
+
+    #[TestWith(['rejected'])]
+    #[TestWith(['canceled'])]
+    #[TestWith(['completed'])]
+    public function test_history_can_be_deleted_before_deleting_the_warehouse(string $status): void
+    {
+        $this->travelTo(new \DateTimeImmutable('2026-11-01 08:00:00', new \DateTimeZone('Asia/Jakarta')));
+        $booking = $this->createBooking(['status' => $status]);
+        $warehouseId = $booking->gudang_id;
+        DB::table('jadwal')->insert([
+            'id' => (string) Str::uuid(), 'jam_mulai' => '09:00:00', 'jam_selesai' => '09:45:00',
+            'kuota' => 1, 'status_aktif' => true,
+        ]);
+        $availabilityUrl = route('customer.temu-janji.availability', ['tanggal_kunjungan' => '2026-11-10']);
+        $this->getJson($availabilityUrl)->assertOk()->assertJsonPath('slots.0.is_full', $status === 'completed');
+        $this->get(route('admin.temu-janji.show', $booking))->assertOk()
+            ->assertSee('Hapus')->assertSee('Data tidak dapat dikembalikan.')
+            ->assertDontSee('Batalkan Booking');
+        $this->delete(route('admin.gudang.destroy', $warehouseId))->assertSessionHasErrors('gudang');
+        $this->assertDatabaseHas('gudang', ['id' => $warehouseId]);
+
+        $this->delete(route('admin.temu-janji.destroy', $booking))
+            ->assertRedirect(route('admin.temu-janji.index'));
+        $this->assertDatabaseMissing('temu_janji', ['id' => $booking->id]);
+        $this->getJson($availabilityUrl)->assertOk()->assertJsonPath('slots.0.is_full', false);
+        $this->delete(route('admin.temu-janji.destroy', $booking))->assertNotFound();
+        $this->delete(route('admin.gudang.destroy', $warehouseId))->assertRedirect(route('admin.gudang.index', absolute: false));
+        $this->assertDatabaseMissing('gudang', ['id' => $warehouseId]);
+    }
+
+    #[TestWith(['pending'])]
+    #[TestWith(['approved'])]
+    public function test_history_delete_endpoint_rejects_active_bookings(string $status): void
+    {
+        $booking = $this->createBooking(['status' => $status]);
+        $this->from(route('admin.temu-janji.show', $booking))
+            ->delete(route('admin.temu-janji.destroy', $booking))->assertSessionHasErrors('status');
+        $this->assertDatabaseHas('temu_janji', ['id' => $booking->id, 'status' => $status]);
+    }
+
+    public function test_guest_cannot_delete_pending_bookings_or_history(): void
+    {
+        $pending = $this->createBooking();
+        $history = $this->createBooking(['status' => 'completed']);
+        auth()->logout();
+        $this->post(route('admin.temu-janji.cancel', $pending))->assertRedirect(route('admin.login', absolute: false));
+        $this->delete(route('admin.temu-janji.destroy', $history))->assertRedirect(route('admin.login', absolute: false));
+        $this->assertDatabaseHas('temu_janji', ['id' => $pending->id]);
+        $this->assertDatabaseHas('temu_janji', ['id' => $history->id]);
+    }
+
+    public function test_stale_pending_delete_is_rejected_after_approval(): void
+    {
+        $booking = $this->createBooking();
+        $this->get(route('admin.temu-janji.show', $booking))->assertSee('Batalkan Booking')
+            ->assertSee('Data tidak dapat dikembalikan.');
+        $this->post(route('admin.temu-janji.approve', $booking))->assertSessionHasNoErrors();
+        $this->post(route('admin.temu-janji.cancel', $booking))->assertSessionHasErrors('status');
+        $this->assertDatabaseHas('temu_janji', ['id' => $booking->id, 'status' => 'approved']);
+        $this->get(route('admin.temu-janji.show', $booking))->assertDontSee('Batalkan Booking')
+            ->assertDontSee('Data tidak dapat dikembalikan.');
+    }
+
+    public function test_pending_delete_preserves_keep_and_remaining_warehouse_relations(): void
+    {
+        $pending = $this->createBooking();
+        $approved = $this->createBooking();
+        $this->post(route('admin.temu-janji.approve', $approved))->assertSessionHasNoErrors();
+        $this->post(route('admin.temu-janji.cancel', $pending))->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('gudang', ['id' => $pending->gudang_id, 'status' => 'sedang di-keep']);
+        $this->delete(route('admin.gudang.destroy', $pending->gudang_id))->assertSessionHasErrors('gudang');
+        $this->assertDatabaseHas('temu_janji', ['id' => $approved->id, 'status' => 'approved']);
+    }
+
+    #[TestWith(['tidak tersedia'])]
+    #[TestWith(['digunakan'])]
+    #[TestWith(['sedang di-keep'])]
+    public function test_pending_delete_reconciles_only_an_unused_keep(string $warehouseStatus): void
+    {
+        $booking = $this->createBooking();
+        DB::table('gudang')->where('id', $booking->gudang_id)->update(['status' => $warehouseStatus]);
+        $this->post(route('admin.temu-janji.cancel', $booking))->assertSessionHasNoErrors();
+        $this->assertDatabaseMissing('temu_janji', ['id' => $booking->id]);
+        $this->assertDatabaseHas('gudang', ['id' => $booking->gudang_id,
+            'status' => $warehouseStatus === 'sedang di-keep' ? 'tersedia' : $warehouseStatus]);
+    }
+
+    public function test_deletion_failure_rolls_back_the_booking(): void
+    {
+        $booking = $this->createBooking();
+        TemuJanji::deleted(function (): void {
+            throw new \RuntimeException('Simulated deletion failure.');
+        });
+        try {
+            $this->post(route('admin.temu-janji.cancel', $booking))->assertServerError();
+            $this->assertDatabaseHas('temu_janji', ['id' => $booking->id, 'status' => 'pending']);
+            $this->assertDatabaseHas('gudang', ['id' => $booking->gudang_id, 'status' => 'tersedia']);
+        } finally {
+            TemuJanji::flushEventListeners();
+        }
     }
 
     /** @param array<string, mixed> $attributes */
