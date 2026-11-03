@@ -1,0 +1,71 @@
+# syntax=docker/dockerfile:1
+FROM dunglas/frankenphp:1-php8.5-bookworm AS php-base
+
+RUN install-php-extensions pdo_pgsql intl zip gd \
+    && cp "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini" \
+    && printf 'expose_php=Off\ndisplay_errors=Off\nlog_errors=On\nerror_log=/proc/self/fd/2\n' > "$PHP_INI_DIR/conf.d/zz-production.ini"
+
+WORKDIR /app
+
+FROM php-base AS dependencies
+COPY --from=composer:2 /usr/bin/composer /usr/local/bin/composer
+COPY composer.json composer.lock ./
+RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist --no-interaction --no-progress
+COPY app ./app
+COPY database ./database
+RUN composer dump-autoload --no-dev --optimize --no-scripts
+
+FROM node:22-bookworm-slim AS assets
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci --no-audit --no-fund
+COPY resources ./resources
+COPY vite.config.js ./
+COPY --from=dependencies /app/vendor ./vendor
+RUN npm run build
+
+FROM php-base AS runtime
+COPY database/migrations ./database/migrations
+COPY app ./app
+COPY bootstrap/app.php bootstrap/providers.php ./bootstrap/
+COPY config ./config
+COPY public ./public
+COPY resources ./resources
+COPY routes ./routes
+COPY artisan composer.json composer.lock Caddyfile ./
+COPY scripts/container-entrypoint.sh ./scripts/container-entrypoint.sh
+COPY --from=dependencies /app/vendor ./vendor
+COPY --from=assets /app/public/build ./public/build
+RUN mkdir -p bootstrap/cache storage/framework/views \
+    && php artisan package:discover --no-interaction \
+    && ln -s /tmp/laravel/storage/app/public public/storage \
+    && chmod 755 scripts/container-entrypoint.sh \
+    && (setcap -r /usr/local/bin/frankenphp || true)
+
+ENV APP_ENV=production \
+    APP_DEBUG=false \
+    VERCEL_CONTAINER=true \
+    PORT=8080 \
+    LOG_CHANNEL=stderr \
+    LOG_LEVEL=warning \
+    SESSION_DRIVER=database \
+    SESSION_SECURE_COOKIE=true \
+    SESSION_HTTP_ONLY=true \
+    SESSION_SAME_SITE=lax \
+    CACHE_STORE=database \
+    QUEUE_CONNECTION=sync \
+    LARAVEL_STORAGE_PATH=/tmp/laravel/storage \
+    VIEW_COMPILED_PATH=/tmp/laravel/storage/framework/views \
+    APP_CONFIG_CACHE=/tmp/laravel/bootstrap/cache/config.php \
+    APP_SERVICES_CACHE=/tmp/laravel/bootstrap/cache/services.php \
+    APP_PACKAGES_CACHE=/tmp/laravel/bootstrap/cache/packages.php \
+    APP_ROUTES_CACHE=/tmp/laravel/bootstrap/cache/routes.php \
+    APP_EVENTS_CACHE=/tmp/laravel/bootstrap/cache/events.php \
+    XDG_CONFIG_HOME=/tmp/caddy/config \
+    XDG_DATA_HOME=/tmp/caddy/data \
+    HOME=/tmp
+
+USER www-data
+EXPOSE 8080
+ENTRYPOINT ["/app/scripts/container-entrypoint.sh"]
+CMD ["frankenphp", "run", "--config", "/app/Caddyfile", "--adapter", "caddyfile"]

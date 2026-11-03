@@ -1,43 +1,7 @@
 {
-  "version": 2,
-  "buildCommand": "npm ci && npm run build",
-  "functions": {
-    "api/index.php": {
-      "runtime": "vercel-php@0.8.0"
-    }
-  },
-  "routes": [
-    {
-      "src": "/build/(.*)",
-      "dest": "/public/build/$1"
-    },
-    {
-      "src": "/images/(.*)",
-      "dest": "/public/images/$1"
-    },
-    {
-      "src": "/favicon.ico",
-      "dest": "/public/favicon.ico"
-    },
-    {
-      "src": "/robots.txt",
-      "dest": "/public/robots.txt"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/api/index.php"
-    }
-  ],
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "container",
   "env": {
-    "APP_NAME": "Sarana Industrial Point",
-    "APP_ENV": "production",
-    "APP_DEBUG": "false",
-    "LOG_CHANNEL": "stderr",
-    "LOG_LEVEL": "error",
-    "VIEW_COMPILED_PATH": "/tmp/views",
-    "CACHE_STORE": "array",
-    "SESSION_DRIVER": "cookie",
-    "QUEUE_CONNECTION": "sync",
-    "APP_KEY": "base64:c29tZXJhbmRvbWtleWlucGFzc3dvcmQxMjM0NTY3OA=="
+    "PORT": "8080"
   }
 }
