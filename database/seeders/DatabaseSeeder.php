@@ -14,6 +14,6 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // Admin accounts are provisioned outside public registration.
+        $this->call(AdminUserSeeder::class);
     }
 }
