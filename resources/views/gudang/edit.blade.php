@@ -143,7 +143,7 @@
                             <div class="relative border border-line rounded-xl overflow-hidden bg-surface p-1 group">
                                 <img src="{{ $gudang->photoUrl($path) }}" alt="Foto gudang {{ $gudang->unit_code }} {{ $idx + 1 }}" class="w-full h-24 object-cover rounded-lg">
                                 <label class="flex items-center gap-1.5 text-xs font-semibold text-red-600 mt-2 p-1 cursor-pointer">
-                                    <input type="checkbox" name="hapus_foto[]" value="{{ $path }}" class="rounded text-red-600"> Hapus Foto
+                                    <input type="checkbox" name="hapus_foto[]" value="{{ $path }}" class="rounded text-red-600" @disabled(app(\App\Services\WarehousePhotoStorage::class)->readOnly())> Hapus Foto
                                 </label>
                             </div>
                         @endforeach
@@ -159,7 +159,10 @@
                     <label for="foto" class="cursor-pointer bg-primary-light hover:bg-primary-light border border-line text-primary px-4 py-2 rounded-xl text-xs font-semibold transition flex items-center gap-2">
                         📷 Pilih / Tambah Foto Baru
                     </label>
-                    <input type="file" id="foto" name="foto[]" multiple accept="image/*" class="hidden">
+                    <input type="file" id="foto" name="foto[]" multiple accept="image/*" class="hidden" @disabled(app(\App\Services\WarehousePhotoStorage::class)->readOnly())>
+                    @if(app(\App\Services\WarehousePhotoStorage::class)->readOnly())
+                        <p>Perubahan foto belum tersedia. Foto lama dipertahankan saat rincian gudang disimpan.</p>
+                    @endif
                     <span id="file-count" class="text-xs text-muted font-medium">Belum ada foto baru dipilih</span>
                 </div>
 

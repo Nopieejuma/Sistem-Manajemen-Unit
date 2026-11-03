@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Gudang;
+use App\Models\TemuJanji;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -506,6 +507,43 @@ class CustomerTemuJanjiTest extends TestCase
         $this->postJson(route('customer.temu-janji.store', ['group' => $warehouse->groupIdentifier()]), $payload)
             ->assertUnprocessable()->assertJsonValidationErrors('jenis_barang_disimpan');
         $this->assertDatabaseCount('temu_janji', 0);
+    }
+
+    #[TestWith([null])]
+    #[TestWith(["Catatan asli\nbooking-details:v1: bukan metadata"])]
+    public function test_legacy_schema_preserves_goods_and_notes_without_a_new_column(?string $notes): void
+    {
+        Schema::table('temu_janji', function (Blueprint $table): void {
+            $table->dropColumn('jenis_barang_disimpan');
+        });
+        $warehouse = $this->warehouse();
+        $payload = $this->payload($warehouse);
+        $payload['catatan'] = $notes;
+        $payload['jenis_barang_disimpan'] = str_repeat('電', 1990)."\nSparepart";
+
+        $response = $this->postJson(route('customer.temu-janji.store', ['group' => $warehouse->groupIdentifier()]), $payload)
+            ->assertCreated();
+        $booking = TemuJanji::query()->where('kode_booking', $response->json('kode_booking'))->sole();
+        $this->assertSame($payload['jenis_barang_disimpan'], $booking->jenis_barang_disimpan);
+        $this->assertSame($notes, $booking->catatan);
+        $this->assertNotSame($notes, $booking->getRawOriginal('catatan'));
+        $this->get($response->json('bukti_booking_url'))->assertOk()->assertHeader('Content-Type', 'application/pdf');
+
+        Schema::table('temu_janji', function (Blueprint $table): void {
+            $table->text('jenis_barang_disimpan')->nullable();
+        });
+        $this->assertSame($payload['jenis_barang_disimpan'], $booking->fresh()->jenis_barang_disimpan);
+        $this->assertSame($notes, $booking->fresh()->catatan);
+    }
+
+    public function test_existing_plain_and_malformed_notes_are_not_reinterpreted(): void
+    {
+        foreach (['Catatan lama', 'booking-details:v1:invalid', 'booking-details:v1:{"catatan":123}', null] as $notes) {
+            $booking = new TemuJanji;
+            $booking->setRawAttributes(['catatan' => $notes]);
+            $this->assertSame($notes, $booking->catatan);
+            $this->assertNull($booking->jenis_barang_disimpan);
+        }
     }
 
     public function test_success_response_provides_a_guest_receipt_for_the_persisted_booking(): void

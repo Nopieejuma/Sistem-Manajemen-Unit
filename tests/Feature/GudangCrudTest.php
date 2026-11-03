@@ -31,6 +31,27 @@ class GudangCrudTest extends TestCase
             ->assertDontSee('placeholder="50000000"', false);
     }
 
+    public function test_container_without_object_storage_preserves_photos_and_allows_other_edits(): void
+    {
+        config(['deployment.container' => true, 'filesystems.warehouse_direct_upload' => false]);
+        Storage::fake('public');
+        $warehouse = Gudang::create(array_merge($this->validGudangData(), ['foto' => ['https://cdn.example.test/existing.jpg']]));
+        $url = route('admin.gudang.update', $warehouse);
+
+        $this->get(route('admin.gudang.edit', $warehouse))->assertOk()->assertSee('Perubahan foto belum tersedia.');
+        $this->get(route('admin.gudang.create'))->assertOk()->assertSee('Upload foto belum tersedia.');
+
+        $this->put($url, array_merge($this->validGudangData(), ['foto' => [UploadedFile::fake()->image('new.jpg')]]))
+            ->assertSessionHasErrors('foto');
+        $this->put($url, array_merge($this->validGudangData(), ['hapus_foto' => ['https://cdn.example.test/existing.jpg']]))
+            ->assertSessionHasErrors('hapus_foto');
+        $this->put($url, array_merge($this->validGudangData(), ['harga_sewa' => 75000000]))->assertSessionHasNoErrors();
+
+        $this->assertSame(['https://cdn.example.test/existing.jpg'], $warehouse->fresh()->foto);
+        $this->assertEquals(75000000, $warehouse->fresh()->harga_sewa);
+        $this->assertSame([], Storage::disk('public')->allFiles());
+    }
+
     public function test_customer_and_admin_display_the_same_database_price_per_year_without_conversion(): void
     {
         $gudang = Gudang::create($this->validGudangData());

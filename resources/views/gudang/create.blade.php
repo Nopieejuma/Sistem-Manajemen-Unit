@@ -143,7 +143,10 @@
                     <label for="foto" class="cursor-pointer bg-primary-light hover:bg-primary-light border border-line text-primary px-4 py-2 rounded-xl text-xs font-semibold transition flex items-center gap-2">
                         📷 Pilih / Tambah Foto
                     </label>
-                    <input type="file" id="foto" name="foto[]" multiple accept="image/*" class="hidden">
+                    <input type="file" id="foto" name="foto[]" multiple accept="image/*" class="hidden" @disabled(app(\App\Services\WarehousePhotoStorage::class)->readOnly())>
+                    @if(app(\App\Services\WarehousePhotoStorage::class)->readOnly())
+                        <p>Upload foto belum tersedia. Data gudang tetap dapat disimpan tanpa foto baru.</p>
+                    @endif
                     <span id="file-count" class="text-xs text-muted font-medium">Belum ada foto dipilih</span>
                 </div>
 

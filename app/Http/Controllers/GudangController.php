@@ -198,11 +198,11 @@ class GudangController extends Controller
             'status' => $statusRules,
             'fasilitas' => ['nullable', 'array'],
             'fasilitas.*' => ['string', Rule::in(self::Facilities), 'distinct'],
-            'foto' => [$this->photoStorage->enabled() ? 'prohibited' : 'nullable', 'array', 'max:20'],
+            'foto' => [$this->photoStorage->enabled() || $this->photoStorage->readOnly() ? 'prohibited' : 'nullable', 'array', 'max:20'],
             'foto.*' => ['image', 'mimes:jpeg,jpg,png,webp', 'max:2048'],
             'photo_uploads' => [$this->photoStorage->enabled() ? 'nullable' : 'prohibited', 'array', 'max:20'],
             'photo_uploads.*' => ['required', 'uuid', 'distinct'],
-            'hapus_foto' => ['nullable', 'array'],
+            'hapus_foto' => [$this->photoStorage->readOnly() ? 'prohibited' : 'nullable', 'array'],
             'hapus_foto.*' => ['string', 'max:2048', 'distinct'],
         ], [
             'unit_code.unique' => 'Kode unit sudah digunakan.',

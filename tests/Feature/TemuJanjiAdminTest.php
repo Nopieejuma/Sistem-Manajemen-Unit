@@ -5,7 +5,9 @@ namespace Tests\Feature;
 use App\Models\TemuJanji;
 use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use PHPUnit\Framework\Attributes\TestWith;
 use Tests\TestCase;
@@ -46,6 +48,23 @@ class TemuJanjiAdminTest extends TestCase
             ->assertOk()->assertSee('BK-FILTER-002')->assertDontSee('BK-FILTER-001');
         $this->get(route('admin.temu-janji.index', ['tanggal_kunjungan' => '2026-11-10']))
             ->assertOk()->assertSee('BK-FILTER-001')->assertSee('BK-FILTER-002')->assertDontSee('BK-FILTER-003');
+    }
+
+    public function test_admin_reads_legacy_goods_and_notes_and_status_changes_preserve_them(): void
+    {
+        Schema::table('temu_janji', function (Blueprint $table): void {
+            $table->dropColumn('jenis_barang_disimpan');
+        });
+        $booking = $this->createBooking(TemuJanji::detailsForStorage('Sparepart kendaraan', 'Mohon akses loading dock.'));
+        $originalNotes = $booking->getRawOriginal('catatan');
+
+        $this->get(route('admin.temu-janji.show', $booking))
+            ->assertOk()->assertSee('Sparepart kendaraan')->assertSee('Mohon akses loading dock.')
+            ->assertDontSee('booking-details:v1:');
+        $this->post(route('admin.temu-janji.reject', $booking))->assertSessionHasNoErrors();
+
+        $this->assertSame('rejected', $booking->fresh()->status);
+        $this->assertSame($originalNotes, $booking->fresh()->getRawOriginal('catatan'));
     }
 
     public function test_admin_can_view_booking_details_and_customer_capacity_count(): void

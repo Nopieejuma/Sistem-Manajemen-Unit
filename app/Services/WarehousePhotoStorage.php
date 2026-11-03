@@ -24,6 +24,11 @@ class WarehousePhotoStorage
         return (bool) config('filesystems.warehouse_direct_upload');
     }
 
+    public function readOnly(): bool
+    {
+        return (bool) config('deployment.container') && ! $this->enabled();
+    }
+
     /** @param array<int, array{mime: string, size: int}> $files
      * @return array<int, array<string, mixed>>
      */

@@ -48,7 +48,7 @@ php artisan view:cache --no-interaction
 if php -r 'exit(filter_var(getenv("WAREHOUSE_DIRECT_UPLOAD"), FILTER_VALIDATE_BOOLEAN) ? 0 : 1);'; then
     printf '%s\n' 'Direct photo uploads enabled: verify private/public bucket policies and configure the photo cleanup scheduler before production.' >&2
 else
-    printf '%s\n' 'WARNING: warehouse photos still use temporary local storage. Enable and configure direct object storage uploads before production.' >&2
+    printf '%s\n' 'Photo changes are disabled in the container; existing photo references are preserved. Configure direct object storage uploads to enable photo management.' >&2
 fi
 
 exec "$@"
