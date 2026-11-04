@@ -6,6 +6,7 @@ use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 
@@ -24,6 +25,18 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        if (env('VERCEL')) {
+            URL::forceScheme('https');
+
+            $host = env('VERCEL_PROJECT_PRODUCTION_URL') ?: env('VERCEL_URL');
+
+            if (is_string($host) && $host !== '') {
+                config([
+                    'app.url' => str_starts_with($host, 'http') ? $host : 'https://'.$host,
+                ]);
+            }
+        }
+
         RateLimiter::for('admin-login', function (Request $request): Limit {
             $username = Str::transliterate(Str::lower($request->string('username')->toString()));
 
