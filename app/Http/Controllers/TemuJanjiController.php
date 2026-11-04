@@ -22,7 +22,9 @@ class TemuJanjiController extends Controller
     private const array AllowedTransitions = [
         'approve' => ['pending'],
         'reject' => ['pending'],
-        'cancel' => ['pending', 'approved'],
+        'cancel' => ['pending'],
+        'revoke' => ['approved'],
+        'destroy' => ['rejected', 'canceled', 'completed'],
         'complete' => ['approved'],
     ];
 
@@ -30,7 +32,7 @@ class TemuJanjiController extends Controller
     private const array TargetStatuses = [
         'approve' => 'approved',
         'reject' => 'rejected',
-        'cancel' => 'canceled',
+        'revoke' => 'canceled',
         'complete' => 'completed',
     ];
 
@@ -107,7 +109,39 @@ class TemuJanjiController extends Controller
 
     public function cancel(TemuJanji $temuJanji): RedirectResponse
     {
-        return $this->transition($temuJanji, 'cancel');
+        return $this->deleteBooking($temuJanji, 'cancel');
+    }
+
+    public function destroy(TemuJanji $temuJanji): RedirectResponse
+    {
+        return $this->deleteBooking($temuJanji, 'destroy');
+    }
+
+    private function deleteBooking(TemuJanji $temuJanji, string $action): RedirectResponse
+    {
+        DB::transaction(function () use ($temuJanji, $action): void {
+            $warehouse = Gudang::query()->whereKey($temuJanji->gudang_id)->lockForUpdate()->firstOrFail();
+            $booking = TemuJanji::query()->whereKey($temuJanji->getKey())->lockForUpdate()->firstOrFail();
+
+            if (! in_array($booking->status, self::AllowedTransitions[$action], true)) {
+                throw ValidationException::withMessages([
+                    'status' => 'Status booking telah berubah atau penghapusan ini tidak diizinkan.',
+                ]);
+            }
+
+            DB::table('jadwal')->where('jam_mulai', $booking->jam_mulai)
+                ->where('jam_selesai', $booking->jam_selesai)->orderBy('id')->lockForUpdate()->get(['id']);
+
+            $booking->delete();
+
+            if ($warehouse->status === 'sedang di-keep'
+                && ! $warehouse->temuJanji()->where('status', 'approved')->exists()) {
+                $warehouse->status = 'tersedia';
+                $warehouse->save();
+            }
+        });
+
+        return to_route('admin.temu-janji.index')->with('success', 'Data booking berhasil dihapus permanen.');
     }
 
     public function complete(TemuJanji $temuJanji): RedirectResponse
@@ -115,11 +149,21 @@ class TemuJanjiController extends Controller
         return $this->transition($temuJanji, 'complete');
     }
 
+    public function revoke(TemuJanji $temuJanji): RedirectResponse
+    {
+        return $this->transition($temuJanji, 'revoke');
+    }
+
     private function transition(TemuJanji $temuJanji, string $action): RedirectResponse
     {
         $targetStatus = self::TargetStatuses[$action];
 
         DB::transaction(function () use ($temuJanji, $action, $targetStatus): void {
+            $warehouse = Gudang::query()
+                ->whereKey($temuJanji->gudang_id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
             $booking = TemuJanji::query()
                 ->whereKey($temuJanji->getKey())
                 ->lockForUpdate()
@@ -130,11 +174,6 @@ class TemuJanjiController extends Controller
                     'status' => 'Status booking telah berubah atau transisi ini tidak diizinkan.',
                 ]);
             }
-
-            $warehouse = Gudang::query()
-                ->whereKey($booking->gudang_id)
-                ->lockForUpdate()
-                ->firstOrFail();
 
             if ($targetStatus === 'approved') {
                 if (! in_array($warehouse->status, ['tersedia', 'sedang di-keep'], true)) {

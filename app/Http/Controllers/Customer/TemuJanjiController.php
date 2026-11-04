@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Customer;
 
 use App\Http\Controllers\Controller;
 use App\Models\Gudang;
+use App\Models\TemuJanji;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
@@ -189,8 +190,7 @@ class TemuJanjiController extends Controller
                     'tanggal_kunjungan' => $data['tanggal_kunjungan'],
                     'jam_mulai' => $schedule->jam_mulai,
                     'jam_selesai' => $schedule->jam_selesai,
-                    'catatan' => $data['catatan'] ?? null,
-                    'jenis_barang_disimpan' => $data['jenis_barang_disimpan'],
+                    ...TemuJanji::detailsForStorage($data['jenis_barang_disimpan'], $data['catatan'] ?? null),
                     'status' => 'pending',
                     'created_at' => $timestamp,
                     'updated_at' => $timestamp,

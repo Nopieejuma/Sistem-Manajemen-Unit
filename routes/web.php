@@ -48,10 +48,12 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
 
         Route::get('/temu-janji', [TemuJanjiController::class, 'index'])->name('temu-janji.index');
         Route::get('/temu-janji/{temuJanji}', [TemuJanjiController::class, 'show'])->name('temu-janji.show');
+        Route::delete('/temu-janji/{temuJanji}', [TemuJanjiController::class, 'destroy'])->name('temu-janji.destroy');
         Route::post('/temu-janji/{temuJanji}/approve', [TemuJanjiController::class, 'approve'])->name('temu-janji.approve');
         Route::post('/temu-janji/{temuJanji}/reject', [TemuJanjiController::class, 'reject'])->name('temu-janji.reject');
         Route::post('/temu-janji/{temuJanji}/cancel', [TemuJanjiController::class, 'cancel'])->name('temu-janji.cancel');
         Route::post('/temu-janji/{temuJanji}/complete', [TemuJanjiController::class, 'complete'])->name('temu-janji.complete');
+        Route::post('/temu-janji/{temuJanji}/revoke', [TemuJanjiController::class, 'revoke'])->name('temu-janji.revoke');
 
         Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     });
