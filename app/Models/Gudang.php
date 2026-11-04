@@ -130,10 +130,8 @@ class Gudang extends Model
         if (filter_var($photo, FILTER_VALIDATE_URL)) {
             return $photo;
         }
-        $baseUrl = 'https://pcrlekotkdhpnlrwrsdx.supabase.co/storage/v1/object/public';
 
-        return "{$baseUrl}/{$photo}";
-        // return Storage::disk('public')->url($photo);  ini sebelum gemini
+        return Storage::disk('public')->url($photo);
     }
 
     public function groupKey(): string
